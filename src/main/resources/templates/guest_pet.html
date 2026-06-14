@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>游客体验 - 我的萌宠</title>
+    <link rel="icon" href="/Logo.png">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "ZCOOL KuaiLe", "微软雅黑", sans-serif !important;
+        }
+
+        /* ===== 主题变量定义（与原版完全相同） ===== */
+        :root {
+            --pink: #e83e8c;
+            --pink-dark: #c8235c;
+            --pink-light: rgba(232, 62, 140, 0.1);
+            --white-glass: rgba(248, 249, 250, 0.95);
+            --sidebar-bg: rgba(232, 62, 140, 0.25);
+            --shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
+            --body-bg: #f5f5f5;
+            --card-bg: #ffffff;
+            --text-color: #212529;
+            --border-color: #dee2e6;
+            --input-bg: #ffffff;
+            --btn-primary: #e83e8c;
+            --btn-primary-hover: #c8235c;
+            --btn-outline-color: #e83e8c;
+            --hunger-fill: #4aa3df;
+        }
+        [data-theme="dark"] {
+            --pink: #ff99bb;
+            --pink-dark: #ff6699;
+            --pink-light: rgba(255, 153, 187, 0.2);
+            --white-glass: rgba(30, 30, 40, 0.9);
+            --sidebar-bg: rgba(255, 153, 187, 0.3);
+            --shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+            --body-bg: #121212;
+            --card-bg: rgba(30, 30, 40, 0.85);
+            --text-color: #e0e0e0;
+            --border-color: #444;
+            --input-bg: #2a2a2a;
+            --btn-primary: #ff99bb;
+            --btn-primary-hover: #ff6699;
+            --btn-outline-color: #ff99bb;
+            --hunger-fill: #78c2f1;
+        }
+
+        body {
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            min-height: 100vh;
+            background-color: var(--body-bg);
+            color: var(--text-color);
+        }
+        .page-container {
+            display: flex;
+            min-height: 100vh;
+        }
+        .sidebar {
+            width: 220px;
+            background: transparent;
+            backdrop-filter: blur(8px);
+            background-color: var(--sidebar-bg);
+            color: white;
+            padding: 30px 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .avatar-wrap {
+            width: 90px;
+            height: 90px;
+            border-radius: 50%;
+            overflow: hidden;
+            border: 4px solid #fff;
+            margin-bottom: 15px;
+        }
+        .avatar-wrap img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .username {
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+        .upload-btn {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 5px;
+            margin: 5px;
+            cursor: pointer;
+        }
+        .upload-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+        .menu {
+            margin-top: 30px;
+            width: 100%;
+        }
+        .menu a {
+            display: block;
+            color: white;
+            padding: 12px 20px;
+            text-align: center;
+            text-decoration: none;
+            transition: 0.2s;
+        }
+        .menu a:hover {
+            background: rgba(255,255,255,0.15);
+            transform: translateX(5px);
+        }
+        .theme-section {
+            margin-top: 20px;
+            width: 100%;
+            text-align: center;
+        }
+        .theme-label {
+            font-size: 14px;
+            margin-bottom: 8px;
+            color: white;
+            opacity: 0.8;
+        }
+        .theme-switcher {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            align-items: center;
+        }
+        .theme-btn {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            border-radius: 30px;
+            padding: 5px 15px;
+            color: white;
+            cursor: pointer;
+            font-size: 13px;
+            transition: 0.2s;
+            width: 100px;
+            text-align: center;
+        }
+        .theme-btn:hover {
+            background: rgba(255,255,255,0.4);
+            transform: translateY(-2px);
+        }
+        .main-content {
+            flex: 1;
+            padding: 20px;
+            overflow: auto;
+        }
+        .pet-container {
+            max-width: 650px;
+            margin: 0 auto;
+            background: var(--card-bg);
+            backdrop-filter: blur(4px);
+            border-radius: 40px;
+            padding: 30px;
+            text-align: center;
+        }
+        h1 {
+            color: var(--pink);
+            margin-bottom: 20px;
+        }
+        .pet-media {
+            width: 280px;
+            height: 280px;
+            margin: 20px auto;
+            border-radius: 30px;
+            overflow: hidden;
+            background: #fef0e6;
+            box-shadow: var(--shadow);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .pet-media video,
+        .pet-media img {
+            width: 100% !important;
+            height: 100% !important;
+            object-fit: cover;
+            display: block;
+        }
+        .pet-name {
+            font-size: 28px;
+            font-weight: bold;
+            color: var(--pink);
+            margin: 15px 0 5px;
+        }
+        .info-row {
+            background: rgba(255,250,240,0.7);
+            border-radius: 50px;
+            padding: 12px 20px;
+            margin: 15px 0;
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            color: var(--text-color);
+        }
+        .coins {
+            color: var(--pink);
+            font-weight: bold;
+        }
+        .hunger-bar {
+            width: 80%;
+            height: 22px;
+            background-color: #e9e9e9;
+            border-radius: 20px;
+            margin: 10px auto;
+            overflow: hidden;
+        }
+        .hunger-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #78c2f1, var(--hunger-fill));
+            border-radius: 20px;
+            transition: width 0.3s;
+        }
+        .action-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .btn-pink, .btn-outline {
+            border-radius: 30px;
+            padding: 8px 20px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: 0.2s;
+            border: none;
+        }
+        .btn-pink {
+            background: var(--btn-primary);
+            color: white;
+        }
+        .btn-pink:hover {
+            background: var(--btn-primary-hover);
+            transform: translateY(-2px);
+        }
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--btn-outline-color);
+            color: var(--btn-outline-color);
+        }
+        .btn-outline:hover {
+            background: var(--btn-outline-color);
+            color: white;
+        }
+        .speech-bubble {
+            position: absolute;
+            top: -20px;
+            right: 25%;
+            background: #fff9e0;
+            border-radius: 30px;
+            padding: 8px 18px;
+            font-size: 18px;
+            font-weight: bold;
+            color: #ff8866;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            white-space: nowrap;
+            animation: bounce 0.5s ease;
+        }
+        @keyframes bounce {
+            0% { transform: translateY(10px); opacity: 0; }
+            100% { transform: translateY(0); opacity: 1; }
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background: white;
+            border-radius: 30px;
+            padding: 30px;
+            width: 400px;
+            max-width: 90%;
+        }
+        .modal-title {
+            font-size: 24px;
+            color: var(--pink);
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .shop-item {
+            background: #fef5e7;
+            border-radius: 30px;
+            padding: 10px;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .modal-buttons {
+            text-align: center;
+            margin-top: 20px;
+        }
+        .adopt-box {
+            text-align: center;
+        }
+        .adopt-box input {
+            width: 80%;
+            padding: 10px;
+            border-radius: 30px;
+            border: 1px solid #ddd;
+            margin-top: 15px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="page-container">
+    <div class="sidebar">
+        <div class="avatar-wrap">
+            <img id="avatarImg" src="/images/2.png">
+        </div>
+        <div class="username" id="nickName">游客模式</div>
+        <button class="upload-btn" onclick="guestTip()">修改昵称</button>
+        <button class="upload-btn" onclick="guestTip()">更换头像</button>
+        <button class="upload-btn" onclick="guestTip()">更换背景</button>
+        <div class="menu">
+            <!-- 游客版链接 -->
+            <a href="/guest/bills">📋 账单列表</a>
+            <a href="/guest/pet">🐶 饲养萌宠</a>
+            <a href="/guest/calc">🧮 计算工具</a>
+            <a href="/">🏠 返回首页</a>
+        </div>
+        <div class="theme-section">
+            <div class="theme-label">🎨 主题颜色</div>
+            <div class="theme-switcher">
+                <button class="theme-btn" data-theme="white">亮白</button>
+                <button class="theme-btn" data-theme="dark">夜黑</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="pet-container">
+            <h1>🐾 我的狗狗伙伴 🐾</h1>
+            <div id="petContent">加载中...</div>
+        </div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    // ========== 游客提示 ==========
+    function guestTip() {
+        alert("游客模式下无法修改个人资料，请登录后使用完整功能。");
+    }
+
+    // ========== 主题切换（与原版一致） ==========
+    function setTheme(theme) {
+        if (theme === 'white') {
+            document.documentElement.removeAttribute('data-theme');
+        } else {
+            document.documentElement.setAttribute('data-theme', theme);
+        }
+        localStorage.setItem('site_theme', theme);
+    }
+    function loadTheme() {
+        const saved = localStorage.getItem('site_theme');
+        if (saved === 'dark') setTheme('dark');
+        else setTheme('white');
+    }
+
+    // ========== 游客宠物数据模拟 ==========
+    let currentPet = {
+        petId: 1,
+        petName: "小金毛（演示）",
+        hunger: 60,      // 0-100
+        mood: "happy",
+        coins: 100,      // 模拟萌币
+        energy: 80
+    };
+    // 背包物品模拟
+    let backpack = {
+        food_small: 0,
+        food_medium: 0,
+        food_large: 0
+    };
+    let isActionPending = false;
+    let currentVideoAction = null;
+
+    const VIDEO_BASE = '/images/pet/';
+    const VIDEO_FILES = {
+        idle: 'dog_happy.mp4',
+        sleep: 'dog_sleep.mp4',
+        eat: 'dog_eat.mp4',
+        play: 'dog_play.mp4',
+        pet: 'dog_pet.mp4'
+    };
+
+    function getDefaultVideoAction() {
+        return (currentPet.hunger <= 20) ? 'sleep' : 'idle';
+    }
+
+    function playDefaultVideo() {
+        const action = getDefaultVideoAction();
+        const $container = $('.pet-media');
+        const hasVideo = $container.find('video').length > 0;
+        if (action === 'sleep' && currentVideoAction !== 'sleep') {
+            showBubble('我好饿呀，碎觉就不饿了', 3000);
+        } else if (action === 'idle' && currentVideoAction !== 'idle') {
+            showBubble('主人你来看我啦~', 2000);
+        }
+        if (currentVideoAction === action && hasVideo) return;
+        setPetVideo(action, true);
+    }
+
+    function setPetVideo(action, loop, onEndedCallback = null) {
+        const fileName = VIDEO_FILES[action];
+        if (!fileName) return;
+        const videoUrl = VIDEO_BASE + fileName;
+        currentVideoAction = action;
+
+        const $container = $('.pet-media');
+        if (!$container.length) return;
+
+        const video = document.createElement('video');
+        video.autoplay = true;
+        video.loop = loop;
+        video.muted = true;
+        video.playsInline = true;
+        video.style.width = '100%';
+        video.style.height = '100%';
+        video.style.objectFit = 'cover';
+
+        const source = document.createElement('source');
+        source.src = videoUrl;
+        source.type = 'video/mp4';
+        video.appendChild(source);
+
+        $container.empty();
+        $container.append(video);
+
+        video.play().catch(err => {
+            console.warn('视频播放失败', err);
+            $container.html('<img src="/images/2.png" alt="宠物">');
+        });
+
+        if (onEndedCallback) {
+            video.onended = onEndedCallback;
+        } else if (!loop) {
+            video.onended = () => {
+                playDefaultVideo();
+            };
+        }
+    }
+
+    function showBubble(text, duration = 2000) {
+        $('.speech-bubble').remove();
+        const $petShow = $('.pet-show');
+        if (!$petShow.length) return;
+        $petShow.append(`<div class="speech-bubble">${text}</div>`);
+        setTimeout(() => $('.speech-bubble').fadeOut(300, function () { $(this).remove(); }), duration);
+    }
+
+    // 渲染宠物界面
+    function renderPet() {
+        const moodMap = { happy: '😊 开心', sad: '😢 难过', excited: '🤩 兴奋', calm: '😌 平静' };
+        const moodEmoji = moodMap[currentPet.mood] || '😌 平静';
+        const hunger = currentPet.hunger;
+        const energy = currentPet.energy;
+        const coins = currentPet.coins;
+
+        $('#petContent').html(`
+            <div class="pet-show" onclick="petClick()">
+                <div class="pet-media"></div>
+            </div>
+            <div class="pet-name">${escapeHtml(currentPet.petName)}</div>
+            <div class="info-row">
+                <span>❤️ 心情：${moodEmoji}</span>
+                <span>💰 <span class="coins">${coins}</span> 币</span>
+                <span>⚡ 活力值：${energy}</span>
+            </div>
+            <div>🍖 饥饿值 ${hunger}</div>
+            <div class="hunger-bar"><div class="hunger-fill" style="width: ${hunger}%;"></div></div>
+            <div class="action-buttons">
+                <button class="btn-pink" onclick="feedPet()">🍖 喂食 (10币)</button>
+                <button class="btn-pink" onclick="playWithPet()">🎾 玩耍 (10币)</button>
+                <button class="btn-outline" onclick="renamePet()">✏️ 改名</button>
+                <button class="btn-outline" onclick="openShop()">🛒 商店</button>
+            </div>
+        `);
+        playDefaultVideo();
+    }
+
+    // 初始加载或刷新宠物（模拟已有宠物，无需领养）
+    function loadPet() {
+        renderPet();
+    }
+
+    // 点击宠物：抚摸
+    window.petClick = function () {
+        if (isActionPending) return;
+        isActionPending = true;
+        showBubble('🥰 摸摸我的头呀~ 主人！', 1500);
+        setPetVideo('pet', false, () => {
+            isActionPending = false;
+            playDefaultVideo();
+        });
+        // 模拟抚摸增加亲密度（这里我们简单加一点心情值）
+        currentPet.mood = "happy";
+        currentPet.hunger = Math.min(100, currentPet.hunger + 2);
+        renderPet(); // 刷新界面
+    };
+
+    // 喂食模拟
+    window.feedPet = function () {
+        if (isActionPending) return;
+        if (currentPet.coins < 10) {
+            alert("萌币不足，请登录后赚取更多萌币～");
+            return;
+        }
+        isActionPending = true;
+        // 模拟喂食效果
+        currentPet.coins -= 10;
+        currentPet.hunger = Math.min(100, currentPet.hunger + 20);
+        currentPet.mood = "happy";
+        setPetVideo('eat', false, () => {
+            isActionPending = false;
+            showBubble('🍗 好吃！谢谢主人~', 1500);
+            renderPet();
+        });
+    };
+
+    // 玩耍模拟
+    window.playWithPet = function () {
+        if (isActionPending) return;
+        if (currentPet.coins < 10) {
+            alert("萌币不足，请登录后赚取更多萌币～");
+            return;
+        }
+        isActionPending = true;
+        currentPet.coins -= 10;
+        currentPet.hunger = Math.max(0, currentPet.hunger - 5);
+        currentPet.mood = "excited";
+        setPetVideo('play', false, () => {
+            isActionPending = false;
+            showBubble('🎾 主人带我出来玩啦~', 1500);
+            renderPet();
+        });
+    };
+
+    // 改名模拟
+    window.renamePet = function () {
+        const newName = prompt('给宝贝起个新名字', currentPet.petName);
+        if (newName && newName.trim()) {
+            currentPet.petName = newName.trim();
+            showBubble(`🎉 以后请叫我 ${newName} ～`, 1500);
+            renderPet();
+        }
+    };
+
+    // 商店模拟
+    window.openShop = function () {
+        const modal = $(`
+            <div class="modal" id="shopModal">
+                <div class="modal-content">
+                    <div class="modal-title">🛒 宠物商店</div>
+                    <div class="shop-item"><span>🍪 小饼干 (+10饱腹)</span><button class="btn-pink" onclick="buyFood('food_small',10)">购买 10币</button></div>
+                    <div class="shop-item"><span>🥫 肉罐头 (+20饱腹)</span><button class="btn-pink" onclick="buyFood('food_medium',20)">购买 20币</button></div>
+                    <div class="shop-item"><span>🍱 豪华大餐 (+30饱腹)</span><button class="btn-pink" onclick="buyFood('food_large',30)">购买 30币</button></div>
+                    <hr><div>📦 我的背包</div><div id="backpackList">加载中...</div>
+                    <div class="modal-buttons"><button class="btn-outline" onclick="closeShop()">关闭</button></div>
+                </div>
+            </div>
+        `);
+        $('body').append(modal);
+        $('#shopModal').css('display', 'flex');
+        loadBackpack();
+    };
+
+    window.closeShop = function () { $('#shopModal').remove(); };
+
+    function loadBackpack() {
+        let html = '';
+        if (backpack.food_small > 0) html += `<div>🍪 小饼干 x${backpack.food_small} <button class="btn-pink" onclick="useFood('food_small')">使用</button></div>`;
+        if (backpack.food_medium > 0) html += `<div>🥫 肉罐头 x${backpack.food_medium} <button class="btn-pink" onclick="useFood('food_medium')">使用</button></div>`;
+        if (backpack.food_large > 0) html += `<div>🍱 豪华大餐 x${backpack.food_large} <button class="btn-pink" onclick="useFood('food_large')">使用</button></div>`;
+        if (!html) html = '暂无食物';
+        $('#backpackList').html(html);
+    }
+
+    window.buyFood = function (type, price) {
+        if (currentPet.coins < price) {
+            alert("萌币不足，请登录后赚取更多萌币～");
+            return;
+        }
+        currentPet.coins -= price;
+        backpack[type] = (backpack[type] || 0) + 1;
+        alert("购买成功（演示）");
+        loadBackpack();
+        renderPet();
+    };
+
+    window.useFood = function (type) {
+        if (backpack[type] <= 0) return;
+        backpack[type]--;
+        let hungerIncrease = 0;
+        if (type === 'food_small') hungerIncrease = 10;
+        else if (type === 'food_medium') hungerIncrease = 20;
+        else if (type === 'food_large') hungerIncrease = 30;
+        currentPet.hunger = Math.min(100, currentPet.hunger + hungerIncrease);
+        setPetVideo('eat', false, () => {
+            loadBackpack();
+            renderPet();
+        });
+        showBubble('😋 好吃！', 1000);
+    };
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>]/g, function (m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
+    }
+
+    $(document).ready(function () {
+        loadTheme();
+        $('.theme-btn').click(function() {
+            const theme = $(this).data('theme');
+            setTheme(theme);
+        });
+        // 直接加载模拟宠物，无需请求后端
+        loadPet();
+    });
+</script>
+</body>
+</html>

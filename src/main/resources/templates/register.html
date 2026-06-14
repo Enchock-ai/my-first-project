@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>用户注册</title>
+    <link rel="icon" th:href="@{/Logo.png}">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "ZCOOL KuaiLe", "微软雅黑", sans-serif !important;
+        }
+
+        body {
+            background: url("/images/op.png") no-repeat center center fixed;
+            background-size: cover;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .reg-box {
+            width: 400px;
+            padding: 40px;
+            border-radius: 30px;
+            background-color: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(4px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .reg-title {
+            text-align: center;
+            font-size: 28px;
+            margin-bottom: 35px;
+            color: #FF6699;
+            font-weight: bold;
+        }
+
+        .form-group {
+            margin-bottom: 22px;
+        }
+
+        .form-group input {
+            width: 100%;
+            height: 50px;
+            background-color: #fff9fb;
+            border: 1px solid #e0e0e0;
+            border-radius: 25px;
+            padding: 0 20px;
+            color: #333;
+            outline: none;
+            font-size: 15px;
+            transition: all 0.2s;
+        }
+
+        .form-group input:focus {
+            border-color: #FF6699;
+        }
+
+        .reg-btn {
+            width: 100%;
+            height: 50px;
+            background-color: #FF6699;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .reg-btn:hover {
+            background-color: #ff4d8a;
+            transform: translateY(-2px);
+        }
+
+        .tip-text {
+            text-align: center;
+            margin-top: 20px;
+            color: #666;
+            font-size: 14px;
+        }
+
+        .tip-text a {
+            color: #FF6699;
+            text-decoration: none;
+        }
+
+        .msg-tip {
+            text-align: center;
+            margin-bottom: 15px;
+            font-size: 14px;
+            padding: 8px;
+            border-radius: 20px;
+        }
+        .msg-error {
+            color: #d32f2f;
+            background: rgba(255, 235, 235, 0.9);
+        }
+        .msg-success {
+            color: #388e3c;
+            background: rgba(232, 245, 233, 0.9);
+        }
+    </style>
+</head>
+<body>
+
+<div class="reg-box">
+    <div class="reg-title">注册</div>
+
+    <div id="msgContainer"></div>
+
+    <form id="registerForm">
+        <div class="form-group">
+            <input type="text" name="loginname" placeholder="请设置用户名" required>
+        </div>
+        <div class="form-group">
+            <input type="password" name="pwd" placeholder="请设置密码" required>
+        </div>
+        <button type="submit" class="reg-btn">完成注册</button>
+    </form>
+
+    <div class="tip-text">
+        已有账号？<a href="/login/toLogin">返回登录</a>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script th:inline="none">
+    function showMessage(msg, isError) {
+        $('#msgContainer').html('<div class="msg-tip ' + (isError ? 'msg-error' : 'msg-success') + '">' + msg + '</div>');
+        setTimeout(function() {
+            $('#msgContainer .msg-tip').fadeOut(500, function() { $(this).remove(); });
+        }, 3000);
+    }
+
+    $('#registerForm').on('submit', function(e) {
+        e.preventDefault();
+        const $btn = $(this).find('button[type="submit"]');
+        const originalText = $btn.text();
+        $btn.text('注册中...').prop('disabled', true);
+
+        $.post('/login/register', $(this).serialize())
+            .done(function(data) {
+                $btn.text(originalText).prop('disabled', false);
+
+                // 如果返回的是字符串（HTML）
+                if (typeof data === 'string') {
+                    // 检查是否包含成功特征（重定向到登录页或包含成功文字）
+                    if (data.includes('login') || data.includes('登录') || data.includes('注册成功')) {
+                        showMessage('注册成功！正在跳转...', false);
+                        setTimeout(function() {
+                            window.location.href = '/login/toLogin';
+                        }, 1500);
+                    }
+                    // 检查是否包含用户名已存在
+                    else if (data.includes('用户名已存在')) {
+                        showMessage('用户名已存在，请换一个', true);
+                    }
+                    // 检查是否包含其他错误
+                    else if (data.includes('错误') || data.includes('失败')) {
+                        let match = data.match(/(错误|失败)[^<]*/);
+                        showMessage(match ? match[0] : '注册失败，请重试', true);
+                    }
+                    else {
+                        // 假设成功（后端可能直接返回登录页）
+                        showMessage('注册成功！正在跳转...', false);
+                        setTimeout(function() {
+                            window.location.href = '/login/toLogin';
+                        }, 1500);
+                    }
+                }
+                // 如果返回的是 JSON
+                else if (data.code === 200) {
+                    showMessage('注册成功！正在跳转...', false);
+                    setTimeout(function() { window.location.href = '/login/toLogin'; }, 1500);
+                }
+                else {
+                    showMessage(data.msg || '注册失败', true);
+                }
+            })
+            .fail(function(xhr) {
+                $btn.text(originalText).prop('disabled', false);
+                let responseText = xhr.responseText;
+                if (responseText && responseText.includes('用户名已存在')) {
+                    showMessage('用户名已存在，请换一个', true);
+                } else {
+                    showMessage('网络错误，请重试', true);
+                }
+            });
+    });
+</script>
+</body>
+</html>

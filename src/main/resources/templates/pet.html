@@ -1,0 +1,1167 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>我的萌宠 · 账本小屋</title>
+    <link rel="icon" href="/Logo.png">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "ZCOOL KuaiLe", "微软雅黑", sans-serif !important;
+        }
+
+        /* ===== 主题变量定义 ===== */
+        :root {
+            --pink: #e83e8c;
+            --pink-dark: #c8235c;
+            --pink-light: rgba(232, 62, 140, 0.1);
+            --white-glass: rgba(248, 249, 250, 0.95);
+            --sidebar-bg: rgba(232, 62, 140, 0.25);
+            --shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
+            --body-bg: #f5f5f5;
+            --card-bg: #ffffff;
+            --text-color: #212529;
+            --border-color: #dee2e6;
+            --input-bg: #ffffff;
+            --btn-primary: #e83e8c;
+            --btn-primary-hover: #c8235c;
+            --btn-outline-color: #e83e8c;
+            --hunger-fill: #4aa3df;
+            --popup-bg: rgba(255,255,255,0.95);
+        }
+        [data-theme="dark"] {
+            --pink: #ff99bb;
+            --pink-dark: #ff6699;
+            --pink-light: rgba(255, 153, 187, 0.2);
+            --white-glass: rgba(30, 30, 40, 0.9);
+            --sidebar-bg: rgba(255, 153, 187, 0.3);
+            --shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+            --body-bg: #121212;
+            --card-bg: rgba(30, 30, 40, 0.85);
+            --text-color: #e0e0e0;
+            --border-color: #444;
+            --input-bg: #2a2a2a;
+            --btn-primary: #ff99bb;
+            --btn-primary-hover: #ff6699;
+            --btn-outline-color: #ff99bb;
+            --hunger-fill: #78c2f1;
+            --popup-bg: rgba(40,40,55,0.98);
+        }
+
+        body {
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            min-height: 100vh;
+            background-color: var(--body-bg);
+            color: var(--text-color);
+        }
+
+        .page-container {
+            display: flex;
+            min-height: 100vh;
+            position: relative;
+        }
+
+        /* 侧边栏样式（支持折叠） */
+        .sidebar {
+            width: 220px;
+            background: transparent;
+            backdrop-filter: blur(8px);
+            background-color: var(--sidebar-bg);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            transition: width 0.3s ease;
+            overflow-x: hidden;
+            flex-shrink: 0;
+        }
+
+        .sidebar.collapsed {
+            width: 60px;
+        }
+
+        .sidebar.collapsed .avatar-wrap,
+        .sidebar.collapsed .username,
+        .sidebar.collapsed .upload-btn,
+        .sidebar.collapsed .menu,
+        .sidebar.collapsed .theme-section {
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+        }
+
+        .sidebar-toggle {
+            position: absolute;
+            right: -12px;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 100;
+            background: rgba(255, 255, 255, 0.5);
+            backdrop-filter: blur(8px);
+            width: 24px;
+            height: 48px;
+            border-radius: 12px 0 0 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background 0.2s, right 0.3s;
+            border: none;
+            color: var(--pink);
+            font-size: 18px;
+            font-weight: bold;
+            box-shadow: -2px 0 6px rgba(0,0,0,0.1);
+        }
+        .sidebar-toggle:hover {
+            background: rgba(255, 255, 255, 0.8);
+        }
+        .sidebar.collapsed .sidebar-toggle {
+            right: -12px;
+        }
+        .sidebar-toggle .arrow {
+            display: inline-block;
+            transition: transform 0.3s ease;
+        }
+        .sidebar:not(.collapsed) .sidebar-toggle .arrow {
+            transform: rotate(0deg);
+        }
+        .sidebar.collapsed .sidebar-toggle .arrow {
+            transform: rotate(180deg);
+        }
+
+        .avatar-wrap {
+            width: 90px;
+            height: 90px;
+            border-radius: 50%;
+            overflow: hidden;
+            border: 4px solid #fff;
+            margin: 30px 0 15px;
+            position: relative;
+            cursor: pointer;
+        }
+        .avatar-wrap img { width: 100%; height: 100%; object-fit: cover; }
+        .username { font-size: 18px; margin-bottom: 10px; text-align: center; }
+        .upload-btn {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 5px;
+            margin: 5px;
+            cursor: pointer;
+        }
+        .upload-btn:hover { background: rgba(255,255,255,0.3); }
+        .menu {
+            margin-top: 30px;
+            width: 100%;
+        }
+        .menu a {
+            display: block;
+            color: white;
+            padding: 12px 20px;
+            text-align: center;
+            text-decoration: none;
+            transition: 0.2s;
+        }
+        .menu a:hover {
+            background: rgba(255,255,255,0.15);
+            transform: translateX(5px);
+        }
+
+        .theme-section {
+            margin-top: 20px;
+            width: 100%;
+            text-align: center;
+        }
+        .theme-label {
+            font-size: 14px;
+            margin-bottom: 8px;
+            color: white;
+            opacity: 0.8;
+        }
+        .theme-switcher {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            align-items: center;
+        }
+        .theme-btn {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            border-radius: 30px;
+            padding: 5px 15px;
+            color: white;
+            cursor: pointer;
+            font-size: 13px;
+            transition: 0.2s;
+            width: 100px;
+            text-align: center;
+        }
+        .theme-btn:hover {
+            background: rgba(255,255,255,0.4);
+            transform: translateY(-2px);
+        }
+
+        .main-content {
+            flex: 1;
+            padding: 20px;
+            overflow: auto;
+            transition: margin-left 0.3s ease;
+        }
+
+        /* 宠物容器样式 */
+        .pet-container {
+            max-width: 650px;
+            margin: 0 auto;
+            background: var(--card-bg);
+            backdrop-filter: blur(4px);
+            border-radius: 40px;
+            padding: 30px;
+            text-align: center;
+        }
+        h1 {
+            color: var(--pink);
+            margin-bottom: 20px;
+        }
+        .pet-media {
+            width: 280px;
+            height: 280px;
+            margin: 20px auto;
+            border-radius: 30px;
+            overflow: hidden;
+            background: #fef0e6;
+            box-shadow: var(--shadow);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .pet-media video,
+        .pet-media img {
+            width: 100% !important;
+            height: 100% !important;
+            object-fit: cover;
+            display: block;
+        }
+        .pet-name {
+            font-size: 28px;
+            font-weight: bold;
+            color: var(--pink);
+            margin: 15px 0 5px;
+        }
+        .info-row {
+            background: rgba(255,250,240,0.7);
+            border-radius: 50px;
+            padding: 12px 20px;
+            margin: 15px 0;
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            color: var(--text-color);
+        }
+        .coins {
+            color: var(--pink);
+            font-weight: bold;
+        }
+        .hunger-bar {
+            width: 80%;
+            height: 22px;
+            background-color: #e9e9e9;
+            border-radius: 20px;
+            margin: 10px auto;
+            overflow: hidden;
+        }
+        .hunger-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #78c2f1, var(--hunger-fill));
+            border-radius: 20px;
+            transition: width 0.3s;
+        }
+        .action-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .btn-pink, .btn-outline {
+            border-radius: 30px;
+            padding: 8px 20px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: 0.2s;
+            border: none;
+        }
+        .btn-pink {
+            background: var(--btn-primary);
+            color: white;
+        }
+        .btn-pink:hover {
+            background: var(--btn-primary-hover);
+            transform: translateY(-2px);
+        }
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--btn-outline-color);
+            color: var(--btn-outline-color);
+        }
+        .btn-outline:hover {
+            background: var(--btn-outline-color);
+            color: white;
+        }
+        .speech-bubble {
+            position: absolute;
+            top: -20px;
+            right: 25%;
+            background: #fff9e0;
+            border-radius: 30px;
+            padding: 8px 18px;
+            font-size: 18px;
+            font-weight: bold;
+            color: #ff8866;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            white-space: nowrap;
+            animation: bounce 0.5s ease;
+        }
+        @keyframes bounce {
+            0% { transform: translateY(10px); opacity: 0; }
+            100% { transform: translateY(0); opacity: 1; }
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background: white;
+            border-radius: 30px;
+            padding: 30px;
+            width: 400px;
+            max-width: 90%;
+        }
+        .modal-title {
+            font-size: 24px;
+            color: var(--pink);
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .shop-item {
+            background: #fef5e7;
+            border-radius: 30px;
+            padding: 10px;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .modal-buttons {
+            text-align: center;
+            margin-top: 20px;
+        }
+        .adopt-box {
+            text-align: center;
+        }
+        .adopt-box input {
+            width: 80%;
+            padding: 10px;
+            border-radius: 30px;
+            border: 1px solid #ddd;
+            margin-top: 15px;
+        }
+
+        /* ========== 音乐浮层样式（右上角弹出面板） ========== */
+        .music-menu-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            font-size: 26px;
+            cursor: pointer;
+            z-index: 1000;
+            background: rgba(255, 255, 255, 0.5);
+            backdrop-filter: blur(8px);
+            border: none;
+            border-radius: 50%;
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+            transition: 0.2s;
+            color: var(--pink);
+        }
+        .music-menu-btn:hover {
+            background: rgba(255,255,255,0.85);
+            transform: scale(1.05);
+        }
+        .music-popup {
+            position: fixed;
+            top: 78px;
+            right: 24px;
+            width: 260px;
+            background: var(--popup-bg);
+            backdrop-filter: blur(16px);
+            border-radius: 28px;
+            padding: 16px 14px;
+            box-shadow: 0 10px 28px rgba(0,0,0,0.2);
+            border: 1px solid rgba(255,255,255,0.3);
+            z-index: 1001;
+            display: none;
+            transition: 0.2s;
+        }
+        .music-popup.show {
+            display: block;
+        }
+        .popup-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 14px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 8px;
+        }
+        .popup-header span {
+            font-size: 16px;
+            font-weight: bold;
+            color: var(--pink);
+        }
+        .close-popup {
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            color: var(--text-color);
+            opacity: 0.7;
+        }
+        .close-popup:hover {
+            opacity: 1;
+        }
+        .music-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .music-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(255,255,255,0.1);
+            border-radius: 40px;
+            padding: 8px 14px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .music-item:hover {
+            background: var(--pink-light);
+            transform: translateX(3px);
+        }
+        .music-item.active {
+            background: var(--pink);
+            color: white;
+        }
+        .music-name {
+            font-size: 14px;
+            font-weight: 500;
+        }
+        .playing-badge {
+            font-size: 12px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 20px;
+            padding: 2px 8px;
+        }
+        .player-actions {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 8px;
+            border-top: 1px solid var(--border-color);
+            padding-top: 14px;
+        }
+        .player-btn {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            border-radius: 30px;
+            padding: 6px 16px;
+            cursor: pointer;
+            font-size: 14px;
+            color: var(--text-color);
+            transition: 0.2s;
+        }
+        .player-btn:hover {
+            background: var(--pink);
+            color: white;
+        }
+        .now-playing-hint {
+            font-size: 11px;
+            text-align: center;
+            margin-top: 12px;
+            opacity: 0.7;
+        }
+    </style>
+</head>
+<body>
+
+<div class="page-container">
+    <!-- 侧边栏 -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-toggle" id="sidebarToggle"><span class="arrow">◀</span></div>
+        <div class="avatar-wrap"><img id="avatarImg" src="/images/2.png"><input type="file" id="avatarFile" style="display:none" accept="image/*"></div>
+        <div class="username" id="nickName">加载中...</div>
+        <button class="upload-btn" onclick="editNickname()">修改昵称</button>
+        <button class="upload-btn" onclick="document.getElementById('avatarFile').click()">更换头像</button>
+        <button class="upload-btn" onclick="document.getElementById('bgFile').click()">更换背景</button>
+        <input type="file" id="bgFile" style="display:none" accept="image/*">
+        <div class="menu">
+            <a href="/bills/toBillsList">账单列表</a>
+            <a href="/pet/petPage">饲养萌宠</a>
+            <a href="/statistics/page">消费统计</a>
+            <a href="/calculator">计算工具</a>
+            <a href="/login/toLogin">退出登录</a>
+        </div>
+        <div class="theme-section">
+            <div class="theme-label">🎨 主题颜色</div>
+            <div class="theme-switcher">
+                <button class="theme-btn" data-theme="white">亮白</button>
+                <button class="theme-btn" data-theme="dark">夜黑</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="pet-container">
+            <h1>🐾 我的狗狗伙伴 🐾</h1>
+            <div id="petContent">加载中...</div>
+        </div>
+    </div>
+</div>
+
+<!-- 音乐浮层组件（三首可自选） -->
+<button class="music-menu-btn" id="musicMenuBtn">🎵</button>
+<div class="music-popup" id="musicPopup">
+    <div class="popup-header">
+        <span>🎶 音乐小栈</span>
+        <button class="close-popup" id="closeMusicPopup">✕</button>
+    </div>
+    <div class="music-list" id="musicListContainer"></div>
+    <div class="player-actions">
+        <button class="player-btn" id="popupPlayPauseBtn">▶ 播放</button>
+        <button class="player-btn" id="popupStopBtn">⏹ 停止</button>
+    </div>
+    <div class="now-playing-hint" id="nowPlayingHint">未播放</div>
+</div>
+<audio id="globalAudio" loop preload="auto"></audio>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script th:inline="none">
+    // ========== 音乐模块：三首可自选，弹出浮层，跨页面状态同步 ==========
+    const musicLibrary = [
+        { id: 0, name: "🎸 夏日轻快", url: "/music/mybgm.mp3" },
+        { id: 1, name: "🍃 宁静时光", url: "/music/bgm2.mp3" },
+        { id: 2, name: "🎶 纯享世界", url: "/music/bgm3.mp3" }
+    ];
+    let currentTrackId = -1;
+    let isPlaying = false;
+    const audioEl = document.getElementById('globalAudio');
+
+    // DOM 元素
+    const musicMenuBtn = document.getElementById('musicMenuBtn');
+    const musicPopup = document.getElementById('musicPopup');
+    const closePopupBtn = document.getElementById('closeMusicPopup');
+    const popupPlayPause = document.getElementById('popupPlayPauseBtn');
+    const popupStop = document.getElementById('popupStopBtn');
+    const nowPlayingHint = document.getElementById('nowPlayingHint');
+    const musicListContainer = document.getElementById('musicListContainer');
+
+    // 保存音乐状态到 localStorage
+    function saveMusicState() {
+        if (currentTrackId !== -1) {
+            localStorage.setItem('music_track_id', currentTrackId);
+            localStorage.setItem('music_playing', isPlaying ? 'true' : 'false');
+            if (isPlaying && !audioEl.paused) {
+                localStorage.setItem('music_current_time', audioEl.currentTime);
+            }
+        } else {
+            localStorage.removeItem('music_track_id');
+            localStorage.setItem('music_playing', 'false');
+        }
+    }
+
+    // 恢复音乐状态
+    function restoreMusicState() {
+        const savedId = localStorage.getItem('music_track_id');
+        const savedPlaying = localStorage.getItem('music_playing') === 'true';
+        const savedTime = parseFloat(localStorage.getItem('music_current_time'));
+        if (savedId !== null && musicLibrary[savedId]) {
+            currentTrackId = parseInt(savedId);
+            audioEl.src = musicLibrary[currentTrackId].url;
+            audioEl.loop = true;
+            if (savedPlaying && !isNaN(savedTime) && savedTime > 0) {
+                audioEl.currentTime = savedTime;
+            }
+            audioEl.load();
+            if (savedPlaying) {
+                audioEl.play().then(() => {
+                    isPlaying = true;
+                    updateUIForMusic();
+                }).catch(e => {
+                    console.warn("自动播放被阻止", e);
+                    isPlaying = false;
+                    updateUIForMusic();
+                });
+            } else {
+                isPlaying = false;
+                updateUIForMusic();
+            }
+        } else {
+            currentTrackId = -1;
+            isPlaying = false;
+            updateUIForMusic();
+        }
+        updateUIForMusic();
+    }
+
+    // 更新浮层UI
+    function updateUIForMusic() {
+        // 渲染音乐列表
+        let listHtml = '';
+        musicLibrary.forEach(track => {
+            const isActive = (currentTrackId === track.id);
+            listHtml += `
+                <div class="music-item ${isActive ? 'active' : ''}" data-id="${track.id}">
+                    <span class="music-name">${track.name}</span>
+                    ${isActive && isPlaying ? '<span class="playing-badge">🎵 播放中</span>' : ''}
+                    ${isActive && !isPlaying && currentTrackId === track.id ? '<span class="playing-badge">⏸ 暂停</span>' : ''}
+                </div>
+            `;
+        });
+        musicListContainer.innerHTML = listHtml;
+
+        // 绑定点击切换音乐事件
+        document.querySelectorAll('.music-item').forEach(item => {
+            item.addEventListener('click', (e) => {
+                const id = parseInt(item.dataset.id);
+                switchToMusic(id);
+            });
+        });
+
+        // 更新播放/暂停按钮文字
+        if (isPlaying && !audioEl.paused) {
+            popupPlayPause.textContent = '⏸ 暂停';
+        } else {
+            popupPlayPause.textContent = '▶ 播放';
+        }
+        // 更新提示文字
+        if (currentTrackId !== -1) {
+            const trackName = musicLibrary[currentTrackId].name;
+            if (isPlaying && !audioEl.paused) {
+                nowPlayingHint.innerHTML = `🎶 正在播放：${trackName}`;
+            } else {
+                nowPlayingHint.innerHTML = `⏸ 已暂停：${trackName}`;
+            }
+        } else {
+            nowPlayingHint.innerHTML = `🔇 未选择音乐`;
+        }
+        saveMusicState();
+    }
+
+    // 切换音乐
+    function switchToMusic(trackId) {
+        if (currentTrackId === trackId && !audioEl.paused) return;
+        if (audioEl) audioEl.pause();
+        currentTrackId = trackId;
+        const track = musicLibrary[trackId];
+        audioEl.src = track.url;
+        audioEl.loop = true;
+        audioEl.load();
+        audioEl.play().then(() => {
+            isPlaying = true;
+            updateUIForMusic();
+        }).catch(err => {
+            console.warn("播放失败", err);
+            isPlaying = false;
+            updateUIForMusic();
+            alert(`“${track.name}” 播放失败，请检查网络或音乐文件路径是否正确`);
+        });
+    }
+
+    // 播放/暂停当前音乐
+    function togglePlayPause() {
+        if (currentTrackId === -1) {
+            switchToMusic(0);
+            return;
+        }
+        if (audioEl.paused) {
+            audioEl.play().then(() => {
+                isPlaying = true;
+                updateUIForMusic();
+            }).catch(e => console.warn);
+        } else {
+            audioEl.pause();
+            isPlaying = false;
+            updateUIForMusic();
+        }
+    }
+
+    // 停止音乐（重置进度）
+    function stopMusic() {
+        if (audioEl) {
+            audioEl.pause();
+            audioEl.currentTime = 0;
+        }
+        isPlaying = false;
+        updateUIForMusic();
+    }
+
+    // 浮层控制
+    function showPopup() {
+        musicPopup.classList.add('show');
+        setTimeout(() => {
+            document.addEventListener('click', outsideClickListener);
+        }, 0);
+    }
+    function hidePopup() {
+        musicPopup.classList.remove('show');
+        document.removeEventListener('click', outsideClickListener);
+    }
+    function outsideClickListener(e) {
+        if (!musicPopup.contains(e.target) && e.target !== musicMenuBtn) {
+            hidePopup();
+        }
+    }
+
+    function initMusicModule() {
+        restoreMusicState();
+        musicMenuBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (musicPopup.classList.contains('show')) hidePopup();
+            else showPopup();
+        });
+        closePopupBtn.addEventListener('click', hidePopup);
+        popupPlayPause.addEventListener('click', togglePlayPause);
+        popupStop.addEventListener('click', stopMusic);
+        window.addEventListener('beforeunload', () => {
+            if (isPlaying && !audioEl.paused) localStorage.setItem('music_current_time', audioEl.currentTime);
+            saveMusicState();
+        });
+        setInterval(() => {
+            if (isPlaying && !audioEl.paused && currentTrackId !== -1) {
+                localStorage.setItem('music_current_time', audioEl.currentTime);
+            }
+        }, 2000);
+    }
+
+    // ========== 主题切换 ==========
+    function setTheme(theme) {
+        if (theme === 'white') document.documentElement.removeAttribute('data-theme');
+        else document.documentElement.setAttribute('data-theme', theme);
+        localStorage.setItem('site_theme', theme);
+    }
+    function loadTheme() {
+        const saved = localStorage.getItem('site_theme');
+        if (saved === 'dark') setTheme('dark');
+        else setTheme('white');
+    }
+
+    // ========== 侧边栏折叠 ==========
+    function initSidebarToggle() {
+        const sidebar = document.getElementById('sidebar');
+        const toggleBtn = document.getElementById('sidebarToggle');
+        const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+        if (isCollapsed) sidebar.classList.add('collapsed');
+        toggleBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            sidebar.classList.toggle('collapsed');
+            localStorage.setItem('sidebarCollapsed', sidebar.classList.contains('collapsed'));
+        });
+    }
+
+    // ========== 用户信息 ==========
+    function loadUserProfile() {
+        $.get('/user/profile', function (res) {
+            if (res.code === 200) {
+                const data = res.data;
+                if (data.nickname) $('#nickName').text(data.nickname);
+                if (data.avatarUrl) $('#avatarImg').attr('src', data.avatarUrl);
+                if (data.backgroundUrl) {
+                    $('body').css({
+                        'background-image': 'url(' + data.backgroundUrl + ')',
+                        'background-size': 'cover',
+                        'background-position': 'center'
+                    });
+                }
+            } else if (res.code === 401) {
+                window.location.href = '/login/toLogin';
+            }
+        }).fail(() => console.error('加载用户信息失败'));
+    }
+
+    window.editNickname = function () {
+        const oldName = $('#nickName').text();
+        const newName = prompt('请输入新昵称', oldName);
+        if (newName && newName.trim()) {
+            $.ajax({
+                url: '/user/profile',
+                type: 'PUT',
+                contentType: 'application/json',
+                data: JSON.stringify({ nickname: newName.trim() }),
+                success: function (res) {
+                    if (res.code === 200) {
+                        $('#nickName').text(newName.trim());
+                        alert('昵称修改成功');
+                    } else {
+                        alert(res.msg || '修改失败');
+                    }
+                }
+            });
+        }
+    };
+
+    $('#avatarFile').on('change', function (e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        const fd = new FormData();
+        fd.append('avatar', file);
+        $.ajax({
+            url: '/user/avatar', type: 'POST', data: fd, processData: false, contentType: false,
+            success: function (res) {
+                if (res.code === 200) {
+                    $('#avatarImg').attr('src', res.data.avatarUrl + '?t=' + new Date().getTime());
+                    alert('头像更新成功');
+                } else {
+                    alert('上传失败：' + res.msg);
+                }
+            }, error: () => alert('网络错误，请重试')
+        });
+        $(this).val('');
+    });
+
+    $('#bgFile').on('change', function (e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        const fd = new FormData();
+        fd.append('background', file);
+        $.ajax({
+            url: '/user/background', type: 'POST', data: fd, processData: false, contentType: false,
+            success: function (res) {
+                if (res.code === 200) {
+                    const bgUrl = res.data.backgroundUrl;
+                    $('body').css({
+                        'background-image': 'url(' + bgUrl + ')',
+                        'background-size': 'cover',
+                        'background-position': 'center'
+                    });
+                    alert('背景更新成功');
+                } else {
+                    alert('上传失败：' + res.msg);
+                }
+            }, error: () => alert('网络错误，请重试')
+        });
+        $(this).val('');
+    });
+
+    // ========== 宠物逻辑（原样保留） ==========
+    let currentPet = null;
+    let isActionPending = false;
+    let currentVideoAction = null;
+
+    const VIDEO_BASE = '/images/pet/';
+    const VIDEO_FILES = {
+        idle: 'dog_happy.mp4',
+        sleep: 'dog_sleep.mp4',
+        eat: 'dog_eat.mp4',
+        play: 'dog_play.mp4',
+        pet: 'dog_pet.mp4'
+    };
+
+    function getDefaultVideoAction() {
+        if (!currentPet) return 'idle';
+        return (currentPet.hunger <= 20) ? 'sleep' : 'idle';
+    }
+
+    function playDefaultVideo() {
+        const action = getDefaultVideoAction();
+        const $container = $('.pet-media');
+        const hasVideo = $container.find('video').length > 0;
+        if (action === 'sleep' && currentVideoAction !== 'sleep') {
+            showBubble('我好饿呀，碎觉就不饿了', 3000);
+        } else if (action === 'idle' && currentVideoAction !== 'idle') {
+            showBubble('主人你来看我啦~', 2000);
+        }
+        if (currentVideoAction === action && hasVideo) return;
+        setPetVideo(action, true);
+    }
+
+    function setPetVideo(action, loop, onEndedCallback = null) {
+        const fileName = VIDEO_FILES[action];
+        if (!fileName) return;
+        const videoUrl = VIDEO_BASE + fileName;
+        currentVideoAction = action;
+
+        const $container = $('.pet-media');
+        if (!$container.length) return;
+
+        const video = document.createElement('video');
+        video.autoplay = true;
+        video.loop = loop;
+        video.muted = true;
+        video.playsInline = true;
+        video.style.width = '100%';
+        video.style.height = '100%';
+        video.style.objectFit = 'cover';
+
+        const source = document.createElement('source');
+        source.src = videoUrl;
+        source.type = 'video/mp4';
+        video.appendChild(source);
+
+        $container.empty();
+        $container.append(video);
+
+        video.play().catch(err => {
+            console.warn('视频播放失败', err);
+            $container.html('<img src="/images/2.png" alt="宠物">');
+        });
+
+        if (onEndedCallback) {
+            video.onended = onEndedCallback;
+        } else if (!loop) {
+            video.onended = () => {
+                playDefaultVideo();
+            };
+        }
+    }
+
+    function loadPet() {
+        $.get('/pet/info', function (res) {
+            if (res.code === 200) {
+                if (res.data) showPet(res.data);
+                else showAdopt();
+            } else if (res.code === 401) {
+                location.href = '/login/toLogin';
+            }
+        }).fail(() => alert('网络错误，请刷新重试'));
+    }
+
+    function showAdopt() {
+        $('#petContent').html(`
+            <div class="adopt-box">
+                <p>✨ 领养一只可爱的狗狗伙伴吧！ ✨</p>
+                <button class="btn-pink" onclick="adoptPet()">🐶 领养小狗</button>
+                <div><input type="text" id="petNameInput" placeholder="给它起个名字"></div>
+            </div>
+        `);
+    }
+
+    window.adoptPet = function () {
+        const name = $('#petNameInput').val();
+        $.post('/pet/adopt', { petType: 'dog', petName: name }, function (res) {
+            if (res.code === 200) {
+                alert('领养成功！');
+                loadPet();
+            } else {
+                alert(res.msg);
+            }
+        });
+    };
+
+    function showPet(pet) {
+        currentPet = pet;
+        const moodMap = { happy: '😊 开心', sad: '😢 难过', excited: '🤩 兴奋', calm: '😌 平静' };
+        const moodEmoji = moodMap[pet.mood] || '😌 平静';
+        const hunger = pet.hunger;
+        const energy = pet.energy !== undefined ? pet.energy : 100;
+
+        $('#petContent').html(`
+            <div class="pet-show" onclick="petClick()">
+                <div class="pet-media"></div>
+            </div>
+            <div class="pet-name">${escapeHtml(pet.petName)}</div>
+            <div class="info-row">
+                <span>❤️ 心情：${moodEmoji}</span>
+                <span>💰 <span class="coins">${pet.coins}</span> 币</span>
+                <span>⚡ 活力值：${energy}</span>
+            </div>
+            <div>🍖 饥饿值 ${hunger}</div>
+            <div class="hunger-bar"><div class="hunger-fill" style="width: ${hunger}%;"></div></div>
+            <div class="action-buttons">
+                <button class="btn-pink" onclick="feedPet()">🍖 喂食 (10币)</button>
+                <button class="btn-pink" onclick="playWithPet()">🎾 玩耍 (10币)</button>
+                <button class="btn-outline" onclick="renamePet()">✏️ 改名</button>
+                <button class="btn-outline" onclick="openShop()">🛒 商店</button>
+            </div>
+        `);
+        playDefaultVideo();
+    }
+
+    function showBubble(text, duration = 2000) {
+        $('.speech-bubble').remove();
+        const $petShow = $('.pet-show');
+        if (!$petShow.length) return;
+        $petShow.append(`<div class="speech-bubble">${text}</div>`);
+        setTimeout(() => $('.speech-bubble').fadeOut(300, function () { $(this).remove(); }), duration);
+    }
+
+    window.petClick = function () {
+        if (isActionPending) return;
+        isActionPending = true;
+        showBubble('🥰 摸摸我的头呀~ 主人！', 1500);
+        setPetVideo('pet', false, () => {
+            isActionPending = false;
+            playDefaultVideo();
+        });
+    };
+
+    window.feedPet = function () {
+        if (isActionPending) return;
+        isActionPending = true;
+        $.post('/pet/feed', function (res) {
+            if (res.code === 200) {
+                setPetVideo('eat', false, () => {
+                    isActionPending = false;
+                    showBubble('🍗 好吃！谢谢主人~', 1500);
+                    setTimeout(() => loadPet(), 1500);
+                });
+            } else {
+                isActionPending = false;
+                alert(res.msg || '萌币不足');
+            }
+        }).fail(() => {
+            isActionPending = false;
+            alert('网络错误');
+        });
+    };
+
+    window.playWithPet = function () {
+        if (isActionPending) return;
+        isActionPending = true;
+        $.post('/pet/play', function (res) {
+            if (res.code === 200) {
+                setPetVideo('play', false, () => {
+                    isActionPending = false;
+                    showBubble('🎾 主人带我出来玩啦~', 1500);
+                    setTimeout(() => loadPet(), 1500);
+                });
+            } else {
+                isActionPending = false;
+                alert(res.msg || '萌币不足');
+            }
+        }).fail(() => {
+            isActionPending = false;
+            alert('网络错误');
+        });
+    };
+
+    window.renamePet = function () {
+        const newName = prompt('给宝贝起个新名字', currentPet.petName);
+        if (newName && newName.trim()) {
+            $.post('/pet/rename', { newName: newName.trim() }, function (res) {
+                if (res.code === 200) {
+                    showBubble(`🎉 以后请叫我 ${newName} ～`, 1500);
+                    loadPet();
+                } else {
+                    alert(res.msg);
+                }
+            });
+        }
+    };
+
+    window.openShop = function () {
+        const modal = $(`
+            <div class="modal" id="shopModal">
+                <div class="modal-content">
+                    <div class="modal-title">🛒 宠物商店</div>
+                    <div class="shop-item"><span>🍪 小饼干 (+10饱腹)</span><button class="btn-pink" onclick="buyFood('food_small',10)">购买 10币</button></div>
+                    <div class="shop-item"><span>🥫 肉罐头 (+20饱腹)</span><button class="btn-pink" onclick="buyFood('food_medium',20)">购买 20币</button></div>
+                    <div class="shop-item"><span>🍱 豪华大餐 (+30饱腹)</span><button class="btn-pink" onclick="buyFood('food_large',30)">购买 30币</button></div>
+                    <hr><div>📦 我的背包</div><div id="backpackList">加载中...</div>
+                    <div class="modal-buttons"><button class="btn-outline" onclick="closeShop()">关闭</button></div>
+                </div>
+            </div>
+        `);
+        $('body').append(modal);
+        $('#shopModal').css('display', 'flex');
+        loadBackpack();
+    };
+
+    window.closeShop = function () { $('#shopModal').remove(); };
+
+    function loadBackpack() {
+        $.get('/pet/items', function (res) {
+            if (res.code === 200 && res.data) {
+                let html = '';
+                if (res.data.food_small) html += `<div>🍪 小饼干 x${res.data.food_small} <button class="btn-pink" onclick="useFood('food_small')">使用</button></div>`;
+                if (res.data.food_medium) html += `<div>🥫 肉罐头 x${res.data.food_medium} <button class="btn-pink" onclick="useFood('food_medium')">使用</button></div>`;
+                if (res.data.food_large) html += `<div>🍱 豪华大餐 x${res.data.food_large} <button class="btn-pink" onclick="useFood('food_large')">使用</button></div>`;
+                if (!html) html = '暂无食物';
+                $('#backpackList').html(html);
+            } else {
+                $('#backpackList').html('暂无食物');
+            }
+        });
+    }
+
+    window.buyFood = function (type, price) {
+        $.post('/pet/shop/buy', { itemType: type, quantity: 1 }, function (res) {
+            if (res.code === 200) {
+                alert('购买成功');
+                loadBackpack();
+                loadPet();
+            } else {
+                alert(res.msg);
+            }
+        });
+    };
+
+    window.useFood = function (type) {
+        $.post('/pet/shop/use', { itemType: type }, function (res) {
+            if (res.code === 200) {
+                setPetVideo('eat', false, () => {
+                    loadBackpack();
+                    loadPet();
+                });
+                showBubble('😋 好吃！', 1000);
+            } else {
+                alert(res.msg);
+            }
+        });
+    };
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>]/g, function (m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
+    }
+
+    $(document).ready(function () {
+        loadTheme();
+        initSidebarToggle();
+        initMusicModule();   // 启动三首可自选音乐模块
+        $('.theme-btn').click(function() {
+            const theme = $(this).data('theme');
+            setTheme(theme);
+        });
+        loadUserProfile();
+        loadPet();
+    });
+</script>
+</body>
+</html>

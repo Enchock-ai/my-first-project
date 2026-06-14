@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>欢迎来到账本小屋</title>
+  <link rel="icon" href="/Logo.png">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&display=swap');
+
+    * {
+        font-family: "ZCOOL KuaiLe", "微软雅黑", sans-serif !important;
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+    }
+
+    :root {
+        --pink: #ff6699;
+        --pink-dark: #ff4d8a;
+    }
+
+    .video-bg {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        z-index: -1;
+        overflow: hidden;
+    }
+
+    .video-bg video {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: center;
+    }
+
+    .video-bg::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(255, 255, 255, 0.3);
+    }
+
+    body {
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        overflow: hidden;
+        position: relative;
+    }
+
+    .title {
+        font-size: 38px;
+        color: #ff6f8b;
+        margin-top: 60px;
+        margin-bottom: 45px;
+        text-shadow: 0 3px 15px rgba(255, 255, 255, 0.9);
+        z-index: 10;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .title img {
+        height: 36px;
+        vertical-align: middle;
+    }
+
+    .btn-group {
+        display: flex;
+        flex-wrap: nowrap;
+        justify-content: center;
+        align-items: center;
+        gap: 20px;
+        width: 100%;
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 0 20px;
+        z-index: 10;
+    }
+
+    .main-btn {
+        width: 160px;
+        height: 54px;
+        line-height: 54px;
+        font-size: 17px;
+        border-radius: 100px;
+        border: none;
+        color: #fff;
+        background: #ff6f8b;
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+        cursor: pointer;
+        transition: all 0.25s ease;
+        text-align: center;
+        white-space: nowrap;
+    }
+
+    @media (max-width: 780px) {
+    .btn-group {
+        flex-wrap: wrap;
+        max-width: 500px;
+        gap: 12px;
+    }
+    .main-btn {
+        width: 180px;
+    }
+  }
+
+    .btn1 { background: #ff6f8b; }
+    .btn2 { background: #78c2f1; }
+    .btn3 { background: #91ce78; }
+    .btn4 { background: #FFCC66; }
+
+    @media (max-width: 560px) {
+        .btn-group {
+            flex-direction: column;
+            gap: 15px;
+        }
+        .main-btn {
+            width: 200px;
+        }
+    }
+
+    .bgm-btn {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        font-size: 24px;
+        cursor: pointer;
+        z-index: 100;
+        background: rgba(255, 255, 255, 0.5);
+        border: none;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .footer {
+        margin-top: 70px;
+        color: #888;
+        font-size: 14px;
+        z-index: 10;
+    }
+
+    .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+    }
+    .modal-content {
+        background: white;
+        border-radius: 30px;
+        padding: 30px;
+        width: 400px;
+        max-width: 90%;
+        text-align: center;
+    }
+    .modal-title {
+        font-size: 24px;
+        color: var(--pink);
+        margin-bottom: 20px;
+    }
+    .modal-buttons {
+        margin-top: 20px;
+    }
+    .modal-buttons button {
+        background: var(--pink);
+        border: none;
+        border-radius: 30px;
+        padding: 8px 30px;
+        color: white;
+        cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+<div class="video-bg">
+  <video autoplay muted loop playsinline>
+    <source src="/bj.mp4" type="video/mp4">
+    <!-- 如果视频加载失败，显示静态图片 -->
+    您的浏览器不支持视频播放。
+  </video>
+</div>
+
+<button class="bgm-btn" id="bgmToggle">🔇</button>
+<audio id="bgm" loop preload="auto">
+  <source src="/music/mybgm.MP3" type="audio/mpeg">
+</audio>
+
+<h1 class="title">
+  <img src="/Logo.png" alt="图标"> 账本小屋
+</h1>
+
+<div class="btn-group">
+  <button class="main-btn btn4" id="guestBtn" onclick="location.href='/guest/bills'">📂 游客体验</button>
+  <button class="main-btn btn1" onclick="goBills()">📒 进入账本小屋</button>
+  <button class="main-btn btn2" onclick="goPet()">🐶 饲养萌宠</button>
+  <button class="main-btn btn3" onclick="showHelp()">📜 使用说明</button>
+</div>
+
+<div class="footer">温馨小窝 · 记录美好生活</div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script th:inline="none">
+  // ========== 背景音乐控制 ==========
+  const bgm = document.getElementById('bgm');
+  const bgmToggle = document.getElementById('bgmToggle');
+  let isPlaying = false;
+
+  // 视频已经自动播放（静音），无需点击
+  // 音乐需要用户主动点击才能播放（避免违反策略）
+  bgmToggle.addEventListener('click', function() {
+      if (isPlaying) {
+          bgm.pause();
+          bgmToggle.textContent = '🔇';
+      } else {
+          bgm.play().catch(() => {
+              alert('点击任意位置开启音乐');
+          });
+          bgmToggle.textContent = '🔊';
+      }
+      isPlaying = !isPlaying;
+  });
+
+  // 首次点击页面任意位置，尝试播放音乐（如果还没播放）
+  document.addEventListener('click', function enableMusic() {
+      if (!isPlaying) {
+          bgm.play().then(() => {
+              bgmToggle.textContent = '🔊';
+              isPlaying = true;
+          }).catch(() => {});
+          document.removeEventListener('click', enableMusic);
+      }
+  });
+
+  // 视频加载失败时的回退：显示静态背景图
+  const video = document.querySelector('.video-bg video');
+  if (video) {
+      video.onerror = function() {
+          // 如果视频加载失败，设置背景图片
+          document.querySelector('.video-bg').style.backgroundImage = "url('/images/op.png')";
+          document.querySelector('.video-bg').style.backgroundSize = "cover";
+          document.querySelector('.video-bg').style.backgroundPosition = "center";
+      };
+  }
+
+    function checkLoginAndHideGuestBtn() {
+      fetch('/user/checkLogin')
+          .then(res => res.json())
+          .then(data => {
+              if (data.code === 200) {
+                  // 已登录，隐藏游客按钮
+                  $('#guestBtn').hide();
+              } else {
+                  // 未登录，显示游客按钮
+                  $('#guestBtn').show();
+              }
+          })
+          .catch(() => {
+              // 接口不存在或网络错误，默认显示（或者你可以选择隐藏）
+              $('#guestBtn').show();
+          });
+  }
+
+  // ========== 全局登录检查 ==========
+  function checkLogin(callback) {
+      fetch('/user/checkLogin')
+          .then(res => res.json())
+          .then(data => {
+              if (data.code === 200) {
+                  callback();
+              } else {
+                  if (confirm('请先登录！')) {
+                      location.href = '/login/toLogin';
+                  }
+              }
+          })
+          .catch(() => {
+              if (confirm('请先登录！')) {
+                  location.href = '/login/toLogin';
+              }
+          });
+  }
+
+  // ========== 页面跳转 ==========
+  window.goGuest = function() {
+    location.href = '/guest/bills';
+  };
+
+  window.goBills = function() {
+      checkLogin(function() {
+          location.href = '/bills/toBillsList';
+      });
+  };
+
+  window.goPet = function() {
+      checkLogin(function() {
+          location.href = '/pet/petPage';
+      });
+  };
+
+  // ========== 使用说明 ==========
+  window.showHelp = function() {
+      $('.modal').remove();
+      const modalHtml = `
+          <div class="modal" id="helpModal">
+              <div class="modal-content">
+                  <div class="modal-title">📜 使用说明</div>
+                  <div style="text-align: left; line-height: 2;">
+                      1. 登录后可使用记账功能<br>
+                      2. 可添加、修改、删除账单<br>
+                      3. 可更换头像、背景<br>
+                      4. 点击右上角可开关背景音乐<br>
+                      5. 萌宠功能可领养狗狗
+                  </div>
+                  <div class="modal-buttons">
+                      <button onclick="closeHelpModal()">知道了</button>
+                  </div>
+              </div>
+          </div>
+      `;
+      $('body').append(modalHtml);
+      $('#helpModal').css('display', 'flex');
+  };
+
+  window.closeHelpModal = function() {
+      $('#helpModal').remove();
+  };
+
+  $(document).on('click', '.modal', function(e) {
+      if ($(e.target).hasClass('modal')) {
+          $(this).remove();
+      }
+  });
+
+  $(document).ready(function() {
+    checkLoginAndHideGuestBtn();
+  });
+</script>
+</body>
+</html>

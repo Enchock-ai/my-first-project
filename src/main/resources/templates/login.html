@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+	<meta charset="UTF-8">
+	<title>登录</title>
+	<link rel="icon" th:href="@{/Logo.png}">
+	<style>
+		@import url('https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "ZCOOL KuaiLe", "微软雅黑", sans-serif !important;
+        }
+
+        body {
+            background: url("/images/op.png") no-repeat center center fixed;
+            background-size: cover;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .login-card {
+            width: 400px;
+            padding: 40px;
+            border-radius: 30px;
+            background-color: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(4px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .login-title {
+            text-align: center;
+            font-size: 28px;
+            margin-bottom: 35px;
+            color: #FF6699;
+            font-weight: bold;
+        }
+
+        .form-group {
+            margin-bottom: 22px;
+        }
+
+        .form-group input {
+            width: 100%;
+            height: 50px;
+            background-color: #fff9fb;
+            border: 1px solid #e0e0e0;
+            border-radius: 25px;
+            padding: 0 20px;
+            color: #333;
+            font-size: 15px;
+            outline: none;
+            transition: all 0.2s;
+        }
+
+        .form-group input:focus {
+            border-color: #FF6699;
+        }
+
+        .captcha-row {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .captcha-row input {
+            flex: 1;
+        }
+
+        .captcha-row img {
+            height: 50px;
+            border-radius: 25px;
+            cursor: pointer;
+            border: 1px solid #e0e0e0;
+        }
+
+        .login-btn {
+            width: 100%;
+            height: 50px;
+            background-color: #FF6699;
+            border: none;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            color: white;
+            transition: all 0.2s;
+        }
+
+        .login-btn:hover {
+            background-color: #ff4d8a;
+            transform: translateY(-2px);
+        }
+
+        .tip-text {
+            text-align: center;
+            margin-top: 20px;
+            color: #666;
+            font-size: 14px;
+        }
+
+        .tip-text a {
+            color: #FF6699;
+            text-decoration: none;
+        }
+
+        .error-msg {
+            color: #ff4444;
+            text-align: center;
+            margin-bottom: 15px;
+            font-size: 14px;
+            padding: 8px;
+            background: rgba(255, 235, 235, 0.9);
+            border-radius: 20px;
+        }
+	</style>
+</head>
+<body>
+
+<div class="login-card">
+	<div class="login-title">登录</div>
+
+	<div id="msgContainer"></div>
+
+	<form id="loginForm">
+		<div class="form-group">
+			<input type="text" name="loginname" placeholder="用户名" autocomplete="off" required>
+		</div>
+		<div class="form-group">
+			<input type="password" name="pwd" placeholder="密码" autocomplete="off" required>
+		</div>
+		<div class="form-group captcha-row">
+			<input type="text" name="code" placeholder="验证码" required>
+			<img id="codeImg" src="/login/getCode" alt="验证码" title="点击刷新">
+		</div>
+		<button type="submit" class="login-btn">登录</button>
+	</form>
+
+	<div class="tip-text">
+		没有账号？<a href="/login/register">立即注册</a>
+	</div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script th:inline="none">
+	// 验证码刷新（仅手动点击时刷新）
+    const codeImg = document.getElementById('codeImg');
+    if (codeImg) {
+        codeImg.onclick = function() {
+            this.src = '/login/getCode?' + new Date().getTime();
+        };
+    }
+
+    function showError(msg) {
+        $('#msgContainer').html('<div class="error-msg">' + msg + '</div>');
+        setTimeout(function() {
+            $('#msgContainer .error-msg').fadeOut(500, function() { $(this).remove(); });
+        }, 3000);
+    }
+
+    $('#loginForm').on('submit', function(e) {
+        e.preventDefault();
+        const $btn = $(this).find('button[type="submit"]');
+        const originalText = $btn.text();
+        $btn.text('登录中...').prop('disabled', true);
+
+        $.post('/login/login', $(this).serialize())
+            .done(function(data) {
+                $btn.text(originalText).prop('disabled', false);
+
+                let parsedData = data;
+                if (typeof data === 'string') {
+                    try {
+                        parsedData = JSON.parse(data);
+                    } catch(e) {
+                        if (data.includes('用户名或密码不正确')) {
+                            showError('用户名或密码不正确');
+                            return;
+                        }
+                        if (data.includes('验证码错误')) {
+                            showError('验证码错误');
+                            return;
+                        }
+                    }
+                }
+
+                if (parsedData.code === 200) {
+                    window.location.href = '/';
+                } else {
+                    showError(parsedData.msg || '登录失败');
+                    // 注意：不要在这里自动刷新验证码，让用户手动点击图片刷新
+                }
+            })
+            .fail(function(xhr) {
+                $btn.text(originalText).prop('disabled', false);
+                showError('网络错误，请重试');
+            });
+    });
+</script>
+</body>
+</html>

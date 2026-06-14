@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>游客体验 - 记账统计</title>
+    <link rel="icon" href="/Logo.png">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * { font-family: "ZCOOL KuaiLe", "微软雅黑", sans-serif; margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: linear-gradient(135deg, #b5f0b5, #f9d56e); min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 20px; }
+        .card { background: white; border-radius: 40px; padding: 25px; max-width: 800px; width: 100%; box-shadow: 0 20px 30px rgba(0,0,0,0.2); }
+        h1 { text-align: center; color: #ff9966; }
+        .demo-badge { text-align: center; background: #ffeb3b; display: inline-block; padding: 5px 15px; border-radius: 30px; margin: 10px auto; display: table; }
+        canvas { max-width: 100%; margin: 20px 0; }
+        .summary { text-align: center; font-size: 18px; margin-top: 15px; }
+        button { background: #78c2f1; border: none; padding: 8px 20px; border-radius: 30px; cursor: pointer; margin: 5px; }
+        .footer { text-align: center; margin-top: 20px; color: #888; }
+    </style>
+</head>
+<body>
+<div class="card">
+    <h1>📊 账本统计演示</h1>
+    <div class="demo-badge">🎮 基于当前游客账单数据</div>
+    <canvas id="expenseChart" width="400" height="300"></canvas>
+    <div class="summary" id="summaryText">加载中...</div>
+    <div style="text-align: center; margin-top: 15px;">
+        <button onclick="location.href='/guest/bills">📒 返回账本</button>
+        <button onclick="location.href='/guest/pet'">🐶 体验萌宠</button>
+        <button onclick="location.href='/'">🏠 首页</button>
+    </div>
+    <div class="footer">数据来自游客账单，仅展示分类统计</div>
+</div>
+<script>
+    // 这里应该从 sessionStorage 或者直接定义演示数据，为了简单，复用默认账单（也可以从父页面传递，但为了独立，我们写一份同样的初始数据）
+    const bills = [
+        { typeName: "餐饮", price: 45.0 },
+        { typeName: "购物", price: 120.0 },
+        { typeName: "交通", price: 50.0 },
+        { typeName: "娱乐", price: 80.0 }
+    ];
+    function initChart() {
+        const categories = {};
+        bills.forEach(b => { categories[b.typeName] = (categories[b.typeName] || 0) + b.price; });
+        const labels = Object.keys(categories);
+        const data = Object.values(categories);
+        const total = data.reduce((a,b)=>a+b,0);
+        document.getElementById('summaryText').innerHTML = `💰 总支出: ¥${total.toFixed(2)} 元 | 分类统计如下`;
+        const ctx = document.getElementById('expenseChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'pie',
+            data: { labels: labels, datasets: [{ data: data, backgroundColor: ['#ff6f8b','#78c2f1','#91ce78','#ffaa66'] }] },
+            options: { responsive: true }
+        });
+    }
+    initChart();
+</script>
+</body>
+</html>

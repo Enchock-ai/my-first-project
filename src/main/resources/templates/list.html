@@ -1,0 +1,1220 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>账单列表 - 支持打印导出</title>
+    <link rel="icon" href="/Logo.png">
+    <style>
+        /* ========== 原有样式（完全保留） ========== */
+        @import url('https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&display=swap');
+
+        * {
+            font-family: "ZCOOL KuaiLe", "微软雅黑", sans-serif !important;
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --pink: #e83e8c;
+            --pink-dark: #c8235c;
+            --pink-light: rgba(232, 62, 140, 0.1);
+            --white-glass: rgba(248, 249, 250, 0.95);
+            --shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
+            --sidebar-bg: rgba(232, 62, 140, 0.25);
+            --body-bg: #f5f5f5;
+            --card-bg: #ffffff;
+            --text-color: #212529;
+            --border-color: #dee2e6;
+            --input-bg: #ffffff;
+            --table-header-bg: rgba(232, 62, 140, 0.05);
+            --table-row-hover: rgba(232, 62, 140, 0.02);
+            --btn-primary: #e83e8c;
+            --btn-primary-hover: #c8235c;
+            --print-btn-bg: #6c757d;
+            --print-btn-hover: #5a6268;
+        }
+        [data-theme="dark"] {
+            --pink: #ff99bb;
+            --pink-dark: #ff6699;
+            --pink-light: rgba(255, 153, 187, 0.2);
+            --white-glass: rgba(30, 30, 40, 0.9);
+            --sidebar-bg: rgba(255, 153, 187, 0.3);
+            --shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+            --body-bg: #121212;
+            --card-bg: rgba(30, 30, 40, 0.85);
+            --text-color: #e0e0e0;
+            --border-color: #444;
+            --input-bg: #2a2a2a;
+            --table-header-bg: rgba(255, 153, 187, 0.15);
+            --table-row-hover: rgba(255, 153, 187, 0.08);
+            --btn-primary: #ff99bb;
+            --btn-primary-hover: #ff6699;
+            --print-btn-bg: #6c757d;
+            --print-btn-hover: #5a6268;
+        }
+
+        body {
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            min-height: 100vh;
+            background-color: var(--body-bg);
+            color: var(--text-color);
+        }
+
+        .page-container {
+            display: flex;
+            min-height: 100vh;
+            position: relative;
+        }
+
+        /* 侧边栏样式（支持折叠） */
+        .sidebar {
+            width: 220px;
+            background: transparent;
+            backdrop-filter: blur(8px);
+            background-color: var(--sidebar-bg);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            transition: width 0.3s ease;
+            overflow-x: hidden;
+            flex-shrink: 0;
+        }
+        .sidebar.collapsed {
+            width: 60px;
+        }
+        .sidebar.collapsed .avatar-wrap,
+        .sidebar.collapsed .username,
+        .sidebar.collapsed .upload-btn,
+        .sidebar.collapsed .menu,
+        .sidebar.collapsed .theme-section {
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+        }
+        .sidebar-toggle {
+            position: absolute;
+            right: -12px;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 100;
+            background: rgba(255, 255, 255, 0.5);
+            backdrop-filter: blur(8px);
+            width: 24px;
+            height: 48px;
+            border-radius: 12px 0 0 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background 0.2s, right 0.3s;
+            border: none;
+            color: var(--pink);
+            font-size: 18px;
+            font-weight: bold;
+            box-shadow: -2px 0 6px rgba(0,0,0,0.1);
+        }
+        .sidebar-toggle:hover {
+            background: rgba(255, 255, 255, 0.8);
+        }
+        .sidebar.collapsed .sidebar-toggle {
+            right: -12px;
+        }
+        .sidebar-toggle .arrow {
+            display: inline-block;
+            transition: transform 0.3s ease;
+        }
+        .sidebar:not(.collapsed) .sidebar-toggle .arrow {
+            transform: rotate(0deg);
+        }
+        .sidebar.collapsed .sidebar-toggle .arrow {
+            transform: rotate(180deg);
+        }
+
+        .avatar-wrap {
+            width: 90px;
+            height: 90px;
+            border-radius: 50%;
+            overflow: hidden;
+            border: 4px solid #fff;
+            margin: 30px 0 15px;
+            position: relative;
+            cursor: pointer;
+        }
+        .avatar-wrap img { width: 100%; height: 100%; object-fit: cover; }
+        .username { font-size: 18px; margin-bottom: 10px; text-align: center; }
+        .upload-btn {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 5px;
+            margin: 5px;
+            cursor: pointer;
+        }
+        .upload-btn:hover { background: rgba(255,255,255,0.3); }
+        .menu {
+            margin-top: 30px;
+            width: 100%;
+        }
+        .menu a {
+            display: block;
+            color: white;
+            padding: 12px 20px;
+            text-align: center;
+            text-decoration: none;
+            transition: 0.2s;
+        }
+        .menu a:hover {
+            background: rgba(255,255,255,0.15);
+            transform: translateX(5px);
+        }
+        .theme-section {
+            margin-top: 20px;
+            width: 100%;
+            text-align: center;
+        }
+        .theme-label {
+            font-size: 14px;
+            margin-bottom: 8px;
+            color: white;
+            opacity: 0.8;
+        }
+        .theme-switcher {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            align-items: center;
+        }
+        .theme-btn {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            border-radius: 30px;
+            padding: 5px 15px;
+            color: white;
+            cursor: pointer;
+            font-size: 13px;
+            transition: 0.2s;
+            width: 100px;
+            text-align: center;
+        }
+        .theme-btn:hover {
+            background: rgba(255,255,255,0.4);
+            transform: translateY(-2px);
+        }
+
+        .main-content {
+            flex: 1;
+            padding: 20px;
+            overflow: auto;
+            transition: margin-left 0.3s ease;
+        }
+        h1 {
+            text-align: center;
+            color: var(--pink);
+            margin-bottom: 20px;
+            text-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        .search-form {
+            background: var(--card-bg);
+            backdrop-filter: blur(4px);
+            border-radius: 30px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .form-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: flex-end;
+        }
+        .form-group {
+            flex: 1;
+            min-width: 150px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: var(--pink);
+            font-weight: bold;
+        }
+        .form-group input, .form-group select {
+            width: 100%;
+            height: 40px;
+            border-radius: 30px;
+            border: 1px solid var(--border-color);
+            padding: 0 15px;
+            outline: none;
+            background: var(--input-bg);
+            color: var(--text-color);
+        }
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .btn-pink {
+            background: var(--btn-primary);
+            border: none;
+            border-radius: 30px;
+            color: white;
+            padding: 8px 20px;
+            cursor: pointer;
+            transition: 0.2s;
+            font-size: 14px;
+        }
+        .btn-pink:hover {
+            background: var(--btn-primary-hover);
+            transform: translateY(-2px);
+        }
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--pink);
+            color: var(--pink);
+        }
+        .btn-outline:hover {
+            background: var(--pink);
+            color: white;
+        }
+        .table-container {
+            background: var(--card-bg);
+            backdrop-filter: blur(4px);
+            border-radius: 30px;
+            padding: 20px;
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 12px 8px;
+            text-align: center;
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-color);
+            vertical-align: middle;
+        }
+        th {
+            background: var(--table-header-bg);
+            color: var(--pink);
+            font-weight: normal;
+        }
+        tr:hover {
+            background: var(--table-row-hover);
+        }
+        .action-btn {
+            padding: 4px 12px;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            margin: 0 4px;
+            font-size: 12px;
+            transition: 0.2s;
+        }
+        .edit-btn { background: #78c2f1; color: white; }
+        .del-btn { background: #ff7777; color: white; }
+        .print-btn { background: var(--print-btn-bg); color: white; }
+        .print-btn:hover { background: var(--print-btn-hover); transform: translateY(-1px); }
+        .pagination {
+            margin-top: 20px;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            align-items: center;
+        }
+        .pagination button {
+            background: var(--input-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 4px 12px;
+            cursor: pointer;
+            color: var(--text-color);
+        }
+        .pagination button:hover {
+            background: var(--btn-primary);
+            color: white;
+            border-color: var(--btn-primary);
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background: var(--card-bg);
+            border-radius: 30px;
+            padding: 30px;
+            width: 500px;
+            max-width: 90%;
+            color: var(--text-color);
+        }
+        .modal-title {
+            font-size: 24px;
+            color: var(--pink);
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .modal-form-group {
+            margin-bottom: 15px;
+        }
+        .modal-form-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: var(--text-color);
+        }
+        .modal-form-group input,
+        .modal-form-group select,
+        .modal-form-group textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            outline: none;
+            background: var(--input-bg);
+            color: var(--text-color);
+        }
+        .radio-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: center;
+        }
+        .radio-group label {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            color: var(--text-color);
+            cursor: pointer;
+        }
+        .modal-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        /* 页面底部标志 */
+        .site-footer {
+            text-align: center;
+            margin-top: 30px;
+            padding: 15px;
+            font-size: 14px;
+            color: #aaa;
+            border-top: 1px solid var(--border-color);
+        }
+        .site-footer a {
+            color: var(--pink);
+            text-decoration: none;
+        }
+
+        /* ========== 打印样式（与之前完全一致） ========== */
+        @media print {
+            .sidebar, .sidebar-toggle, .search-form, .btn-group, .pagination, .theme-section, .upload-btn, .menu, .action-btn, .music-menu-btn, .music-popup, .site-footer {
+                display: none !important;
+            }
+            .main-content {
+                padding: 0;
+                margin: 0;
+                width: 100%;
+            }
+            .table-container {
+                box-shadow: none;
+                padding: 0;
+                background: white;
+            }
+            body, .main-content, .table-container {
+                background: white !important;
+                color: black !important;
+            }
+            table {
+                width: 100%;
+                border-collapse: collapse;
+            }
+            th, td {
+                border: 1px solid #ddd;
+                padding: 8px;
+                font-family: 'Microsoft Yahei', 'SimHei', sans-serif;
+            }
+            th {
+                background: #f2f2f2 !important;
+                color: #333 !important;
+            }
+            h1 {
+                color: #333;
+            }
+        }
+
+        /* ===== 右上角音乐菜单 (弹出式浮层) ===== */
+        .music-menu-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            font-size: 26px;
+            cursor: pointer;
+            z-index: 1000;
+            background: rgba(255, 255, 255, 0.5);
+            backdrop-filter: blur(8px);
+            border: none;
+            border-radius: 50%;
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+            transition: 0.2s;
+            color: var(--pink);
+        }
+        .music-menu-btn:hover {
+            background: rgba(255,255,255,0.85);
+            transform: scale(1.05);
+        }
+        .music-popup {
+            position: fixed;
+            top: 78px;
+            right: 24px;
+            width: 260px;
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            border-radius: 28px;
+            padding: 18px 16px;
+            box-shadow: 0 10px 28px rgba(0,0,0,0.2);
+            border: 1px solid rgba(255,255,255,0.3);
+            z-index: 1001;
+            display: none;
+            transition: 0.2s;
+        }
+        .music-popup.show {
+            display: block;
+        }
+        .popup-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 14px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 8px;
+        }
+        .popup-header span {
+            font-size: 16px;
+            font-weight: bold;
+            color: var(--pink);
+        }
+        .close-popup {
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            color: var(--text-color);
+            opacity: 0.7;
+        }
+        .close-popup:hover {
+            opacity: 1;
+        }
+        .music-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .music-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(255,255,255,0.1);
+            border-radius: 40px;
+            padding: 8px 14px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .music-item:hover {
+            background: var(--pink-light);
+            transform: translateX(3px);
+        }
+        .music-item.active {
+            background: var(--pink);
+            color: white;
+        }
+        .music-name {
+            font-size: 14px;
+            font-weight: 500;
+        }
+        .playing-badge {
+            font-size: 12px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 20px;
+            padding: 2px 8px;
+        }
+        .player-actions {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 8px;
+            border-top: 1px solid var(--border-color);
+            padding-top: 14px;
+        }
+        .player-btn {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            border-radius: 30px;
+            padding: 6px 16px;
+            cursor: pointer;
+            font-size: 14px;
+            color: var(--text-color);
+            transition: 0.2s;
+        }
+        .player-btn:hover {
+            background: var(--pink);
+            color: white;
+        }
+        .now-playing-hint {
+            font-size: 11px;
+            text-align: center;
+            margin-top: 12px;
+            opacity: 0.7;
+        }
+    </style>
+</head>
+<body>
+
+<div class="page-container">
+    <!-- 侧边栏（带折叠功能） -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-toggle" id="sidebarToggle">
+            <span class="arrow">◀</span>
+        </div>
+        <div class="avatar-wrap">
+            <img id="avatarImg" src="/images/2.png?">
+            <input type="file" id="avatarFile" style="display:none" accept="image/*">
+        </div>
+        <div class="username" id="nickName">加载中...</div>
+        <button class="upload-btn" onclick="editNickname()">修改昵称</button>
+        <button class="upload-btn" onclick="document.getElementById('avatarFile').click()">更换头像</button>
+        <button class="upload-btn" onclick="document.getElementById('bgFile').click()">更换背景</button>
+        <input type="file" id="bgFile" style="display:none" accept="image/*">
+        <div class="menu">
+            <a href="/bills/toBillsList">账单列表</a>
+            <a href="/pet/petPage">饲养萌宠</a>
+            <a href="/statistics/page">消费统计</a>
+            <a href="/calculator">计算工具</a>
+            <a href="/login/toLogin">退出登录</a>
+        </div>
+        <div class="theme-section">
+            <div class="theme-label">🎨主题颜色</div>
+            <div class="theme-switcher">
+                <button class="theme-btn" data-theme="white">亮白</button>
+                <button class="theme-btn" data-theme="dark">夜黑</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <h1>📋 账单表</h1>
+        <div class="search-form">
+            <div class="form-row">
+                <div class="form-group"><label>账单类型</label><select id="search_typeid"><option value="0">请选择</option></select></div>
+                <div class="form-group"><label>开始日期</label><input type="date" id="startDate"></div>
+                <div class="form-group"><label>结束日期</label><input type="date" id="endDate"></div>
+            </div>
+            <div class="btn-group">
+                <button class="btn-pink" id="searchBtn">查询</button>
+                <button class="btn-pink" id="resetBtn">重置</button>
+                <button class="btn-pink" id="addBtn">添加</button>
+                <button class="btn-pink" id="printListBtn">🖨️ 打印列表</button>
+            </div>
+        </div>
+        <div class="table-container">
+            <table id="billTable">
+                <thead>
+                <th>序号</th><th>账单标题</th><th>记账时间</th><th>类型名称</th><th>金额</th><th>备注</th><th>操作</th>
+                </thead>
+                <tbody id="tableBody"><tr><td colspan="7">加载中......</td></tr>
+                </tbody>
+            </table>
+            <div class="pagination" id="pagination"></div>
+        </div>
+
+        <!-- 恢复页面底部标志 -->
+        <div class="site-footer">
+            🏠 账本小屋 · 智慧记账 | 让每一笔支出都有温度
+        </div>
+    </div>
+</div>
+
+<!-- 音乐浮层控件 -->
+<button class="music-menu-btn" id="musicMenuBtn">🎵</button>
+<div class="music-popup" id="musicPopup">
+    <div class="popup-header">
+        <span>🎶 音乐小栈</span>
+        <button class="close-popup" id="closeMusicPopup">✕</button>
+    </div>
+    <div class="music-list" id="musicListContainer"></div>
+    <div class="player-actions">
+        <button class="player-btn" id="popupPlayPauseBtn">▶ 播放</button>
+        <button class="player-btn" id="popupStopBtn">⏹ 停止</button>
+    </div>
+    <div class="now-playing-hint" id="nowPlayingHint">未播放</div>
+</div>
+<audio id="globalAudio" loop preload="auto"></audio>
+
+<!-- 添加/编辑账单模态框 -->
+<div id="billModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-title" id="modalTitle">添加账单</div>
+        <input type="hidden" id="editId">
+        <div class="modal-form-group">
+            <label>账单类型</label>
+            <div id="typeRadioGroup" class="radio-group"></div>
+        </div>
+        <div class="modal-form-group"><label>账单标题</label><input type="text" id="title" placeholder="请输入账单标题"></div>
+        <div class="modal-form-group"><label>账单时间</label><input type="datetime-local" id="billtime"></div>
+        <div class="modal-form-group"><label>金额</label><input type="number" id="price" step="0.01" placeholder="请输入金额"></div>
+        <div class="modal-form-group"><label>备注</label><textarea id="remark" rows="3" placeholder="请输入备注"></textarea></div>
+        <div class="modal-buttons">
+            <button class="btn-pink" id="submitBill">提交</button>
+            <button class="btn-pink" id="closeModalBtn">取消</button>
+        </div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script th:inline="none">
+    // ========== 多音乐播放器模块 (三首可自选，右上角浮层) ==========
+    const musicLibrary = [
+        { id: 0, name: "🎸 夏日轻快", url: "/music/mybgm.mp3" },
+        { id: 1, name: "🍃 宁静时光", url: "/music/bgm2.mp3" },
+        { id: 2, name: "🎶 纯享世界", url: "/music/bgm3.mp3" }
+    ];
+    let currentTrackId = -1;
+    let isPlaying = false;
+    const audioEl = document.getElementById('globalAudio');
+
+    const musicMenuBtn = document.getElementById('musicMenuBtn');
+    const musicPopup = document.getElementById('musicPopup');
+    const closePopupBtn = document.getElementById('closeMusicPopup');
+    const popupPlayPause = document.getElementById('popupPlayPauseBtn');
+    const popupStop = document.getElementById('popupStopBtn');
+    const nowPlayingHint = document.getElementById('nowPlayingHint');
+    const musicListContainer = document.getElementById('musicListContainer');
+
+    function saveMusicState() {
+        if (currentTrackId !== -1) {
+            localStorage.setItem('music_track_id', currentTrackId);
+            localStorage.setItem('music_playing', isPlaying ? 'true' : 'false');
+            if (isPlaying && !audioEl.paused) {
+                localStorage.setItem('music_current_time', audioEl.currentTime);
+            }
+        } else {
+            localStorage.removeItem('music_track_id');
+            localStorage.setItem('music_playing', 'false');
+        }
+    }
+
+    function restoreMusicState() {
+        const savedId = localStorage.getItem('music_track_id');
+        const savedPlaying = localStorage.getItem('music_playing') === 'true';
+        const savedTime = parseFloat(localStorage.getItem('music_current_time'));
+        if (savedId !== null && musicLibrary[savedId]) {
+            currentTrackId = parseInt(savedId);
+            audioEl.src = musicLibrary[currentTrackId].url;
+            audioEl.loop = true;
+            if (savedPlaying && !isNaN(savedTime) && savedTime > 0) {
+                audioEl.currentTime = savedTime;
+            }
+            audioEl.load();
+            if (savedPlaying) {
+                audioEl.play().then(() => {
+                    isPlaying = true;
+                    updateUIForMusic();
+                }).catch(e => {
+                    console.warn("自动播放被阻止", e);
+                    isPlaying = false;
+                    updateUIForMusic();
+                });
+            } else {
+                isPlaying = false;
+                updateUIForMusic();
+            }
+        } else {
+            currentTrackId = -1;
+            isPlaying = false;
+            updateUIForMusic();
+        }
+        updateUIForMusic();
+    }
+
+    function updateUIForMusic() {
+        let listHtml = '';
+        musicLibrary.forEach(track => {
+            const isActive = (currentTrackId === track.id);
+            listHtml += `
+                <div class="music-item ${isActive ? 'active' : ''}" data-id="${track.id}">
+                    <span class="music-name">${track.name}</span>
+                    ${isActive && isPlaying ? '<span class="playing-badge">🎵 播放中</span>' : ''}
+                    ${isActive && !isPlaying && currentTrackId === track.id ? '<span class="playing-badge">⏸ 暂停</span>' : ''}
+                </div>
+            `;
+        });
+        musicListContainer.innerHTML = listHtml;
+
+        document.querySelectorAll('.music-item').forEach(item => {
+            item.addEventListener('click', (e) => {
+                const id = parseInt(item.dataset.id);
+                switchToMusic(id);
+            });
+        });
+
+        if (isPlaying && !audioEl.paused) {
+            popupPlayPause.textContent = '⏸ 暂停';
+        } else {
+            popupPlayPause.textContent = '▶ 播放';
+        }
+        if (currentTrackId !== -1) {
+            const trackName = musicLibrary[currentTrackId].name;
+            if (isPlaying && !audioEl.paused) {
+                nowPlayingHint.innerHTML = `🎶 正在播放：${trackName}`;
+            } else {
+                nowPlayingHint.innerHTML = `⏸ 已暂停：${trackName}`;
+            }
+        } else {
+            nowPlayingHint.innerHTML = `🔇 未选择音乐`;
+        }
+        saveMusicState();
+    }
+
+    function switchToMusic(trackId) {
+        if (currentTrackId === trackId && !audioEl.paused) return;
+        if (audioEl) audioEl.pause();
+        currentTrackId = trackId;
+        const track = musicLibrary[trackId];
+        audioEl.src = track.url;
+        audioEl.loop = true;
+        audioEl.load();
+        audioEl.play().then(() => {
+            isPlaying = true;
+            updateUIForMusic();
+        }).catch(err => {
+            console.warn("播放失败", err);
+            isPlaying = false;
+            updateUIForMusic();
+            alert(`“${track.name}” 播放失败，请检查网络或音乐文件路径是否正确`);
+        });
+    }
+
+    function togglePlayPause() {
+        if (currentTrackId === -1) {
+            switchToMusic(0);
+            return;
+        }
+        if (audioEl.paused) {
+            audioEl.play().then(() => {
+                isPlaying = true;
+                updateUIForMusic();
+            }).catch(e => console.warn);
+        } else {
+            audioEl.pause();
+            isPlaying = false;
+            updateUIForMusic();
+        }
+    }
+
+    function stopMusic() {
+        if (audioEl) {
+            audioEl.pause();
+            audioEl.currentTime = 0;
+        }
+        isPlaying = false;
+        updateUIForMusic();
+    }
+
+    function showPopup() {
+        musicPopup.classList.add('show');
+        setTimeout(() => {
+            document.addEventListener('click', outsideClickListener);
+        }, 0);
+    }
+    function hidePopup() {
+        musicPopup.classList.remove('show');
+        document.removeEventListener('click', outsideClickListener);
+    }
+    function outsideClickListener(e) {
+        if (!musicPopup.contains(e.target) && e.target !== musicMenuBtn) {
+            hidePopup();
+        }
+    }
+
+    function initMusicModule() {
+        restoreMusicState();
+        musicMenuBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (musicPopup.classList.contains('show')) hidePopup();
+            else showPopup();
+        });
+        closePopupBtn.addEventListener('click', hidePopup);
+        popupPlayPause.addEventListener('click', togglePlayPause);
+        popupStop.addEventListener('click', stopMusic);
+        window.addEventListener('beforeunload', () => {
+            if (isPlaying && !audioEl.paused) localStorage.setItem('music_current_time', audioEl.currentTime);
+            saveMusicState();
+        });
+        setInterval(() => {
+            if (isPlaying && !audioEl.paused && currentTrackId !== -1) {
+                localStorage.setItem('music_current_time', audioEl.currentTime);
+            }
+        }, 2000);
+    }
+
+    // ========== 主题切换 ==========
+    function setTheme(theme) {
+        if (theme === 'white') {
+            document.documentElement.removeAttribute('data-theme');
+        } else {
+            document.documentElement.setAttribute('data-theme', theme);
+        }
+        localStorage.setItem('site_theme', theme);
+    }
+    function loadTheme() {
+        const saved = localStorage.getItem('site_theme');
+        if (saved === 'dark') setTheme('dark');
+        else setTheme('white');
+    }
+
+    // ========== 侧边栏折叠 ==========
+    function initSidebarToggle() {
+        const sidebar = document.getElementById('sidebar');
+        const toggleBtn = document.getElementById('sidebarToggle');
+        const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+        if (isCollapsed) sidebar.classList.add('collapsed');
+        toggleBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            sidebar.classList.toggle('collapsed');
+            localStorage.setItem('sidebarCollapsed', sidebar.classList.contains('collapsed'));
+        });
+    }
+
+    // ========== 用户信息 ==========
+    function loadUserProfile() {
+        $.get('/user/profile', function(res) {
+            if (res.code === 200) {
+                const data = res.data;
+                if (data.nickname) $('#nickName').text(data.nickname);
+                if (data.avatarUrl) $('#avatarImg').attr('src', data.avatarUrl);
+                if (data.backgroundUrl) {
+                    $('body').css({
+                        'background-image': 'url(' + data.backgroundUrl + ')',
+                        'background-size': 'cover',
+                        'background-position': 'center'
+                    });
+                }
+            } else if (res.code === 401) {
+                window.location.href = '/login/toLogin';
+            }
+        }).fail(() => console.error('加载用户信息失败'));
+    }
+
+    window.editNickname = function() {
+        const oldName = $('#nickName').text();
+        const newName = prompt('请输入新昵称', oldName);
+        if (newName && newName.trim()) {
+            $.ajax({
+                url: '/user/profile',
+                type: 'PUT',
+                contentType: 'application/json',
+                data: JSON.stringify({ nickname: newName.trim() }),
+                success: function(res) {
+                    if (res.code === 200) {
+                        $('#nickName').text(newName.trim());
+                        alert('昵称修改成功');
+                    } else alert(res.msg || '修改失败');
+                }
+            });
+        }
+    };
+
+    $('#avatarFile').on('change', function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        const fd = new FormData();
+        fd.append('avatar', file);
+        $.ajax({
+            url: '/user/avatar', type: 'POST', data: fd, processData: false, contentType: false,
+            success: function(res) {
+                if (res.code === 200) {
+                    $('#avatarImg').attr('src', res.data.avatarUrl + '?t=' + new Date().getTime());
+                    alert('头像更新成功');
+                } else alert('上传失败：' + res.msg);
+            }, error: () => alert('网络错误，请重试')
+        });
+        $(this).val('');
+    });
+
+    $('#bgFile').on('change', function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        const fd = new FormData();
+        fd.append('background', file);
+        $.ajax({
+            url: '/user/background', type: 'POST', data: fd, processData: false, contentType: false,
+            success: function(res) {
+                if (res.code === 200) {
+                    const bgUrl = res.data.backgroundUrl;
+                    $('body').css({
+                        'background-image': 'url(' + bgUrl + ')',
+                        'background-size': 'cover',
+                        'background-position': 'center'
+                    });
+                    alert('背景更新成功');
+                } else alert('上传失败：' + res.msg);
+            }, error: () => alert('网络错误，请重试')
+        });
+        $(this).val('');
+    });
+
+    // ========== 账单类型 ==========
+    let billTypes = [];
+    function loadBillTypes() {
+        $.get('/billtype/loadAllBillType', function(res) {
+            let types = null;
+            if (res.code === 0 && res.data) types = res.data;
+            else if (res.code === 200 && res.data) types = res.data;
+            else if (Array.isArray(res)) types = res;
+            if (types && types.length) {
+                billTypes = types;
+                let selectHtml = '<option value="0">请选择</option>';
+                let radioHtml = '';
+                types.forEach((item, idx) => {
+                    selectHtml += `<option value="${item.id}">${escapeHtml(item.name)}</option>`;
+                    radioHtml += `<label><input type="radio" name="typeid" value="${item.id}" ${idx === 0 ? 'checked' : ''}> ${escapeHtml(item.name)}</label>`;
+                });
+                $('#search_typeid').html(selectHtml);
+                $('#typeRadioGroup').html(radioHtml);
+            } else {
+                $('#typeRadioGroup').html('<span style="color:red;">暂无账单类型</span>');
+            }
+        }).fail(() => $('#typeRadioGroup').html('<span style="color:red;">加载类型失败</span>'));
+    }
+
+    // ========== 账单列表 ==========
+    let currentPage = 1;
+    let pageSize = 10;
+    let totalPages = 0;
+    let totalCount = 0;
+
+    function loadBills() {
+        const params = {
+            page: currentPage, limit: pageSize,
+            typeid: $('#search_typeid').val(),
+            startDate: $('#startDate').val(),
+            endDate: $('#endDate').val()
+        };
+        $.get('/bills/loadAllBills', params, function(res) {
+            let records = [], total = 0;
+            if (res.code === 0) { records = res.data; total = res.count; }
+            else if (res.code === 200) { records = res.data; total = res.total || records.length; }
+            if (records && records.length) {
+                renderTable(records);
+                totalCount = total;
+                totalPages = Math.ceil(totalCount / pageSize);
+                renderPagination();
+            } else {
+                $('#tableBody').html('<tr><td colspan="7">暂无数据</td></tr>');
+                $('#pagination').html('');
+                totalCount = 0; totalPages = 0;
+            }
+        }).fail(() => $('#tableBody').html('<tr><td colspan="7">加载失败</td></tr>'));
+    }
+
+    function renderTable(records) {
+        let html = '';
+        records.forEach((row, idx) => {
+            let typeName = row.typeName;
+            if (!typeName && billTypes.length) {
+                const found = billTypes.find(t => t.id == row.typeid);
+                if (found) typeName = found.name;
+            }
+            typeName = typeName || '未知';
+            const billDataForPrint = {
+                id: row.id,
+                title: escapeHtml(row.title),
+                billtime: row.billtime,
+                typeName: escapeHtml(typeName),
+                price: row.price,
+                remark: row.remark ? escapeHtml(row.remark) : '-'
+            };
+            const dataAttr = encodeURIComponent(JSON.stringify(billDataForPrint));
+            html += `<tr>
+                <td>${(currentPage-1)*pageSize + idx + 1}</td>
+                <td>${escapeHtml(row.title)}</td>
+                <td>${row.billtime}</td>
+                <td>${escapeHtml(typeName)}</td>
+                <td>${row.price}</td>
+                <td>${row.remark ? escapeHtml(row.remark) : '-'}</td>
+                <td>
+                    <button class="action-btn edit-btn" onclick="openEditModal(${row.id})">修改</button>
+                    <button class="action-btn del-btn" onclick="deleteBill(${row.id})">删除</button>
+                    <button class="action-btn print-btn" onclick="printSingleBillFromData('${dataAttr}')">🖨️ 打印</button>
+                </td>
+            </tr>`;
+        });
+        $('#tableBody').html(html);
+    }
+
+    window.printSingleBillFromData = function(encodedData) {
+        const jsonStr = decodeURIComponent(encodedData);
+        let bill;
+        try { bill = JSON.parse(jsonStr); } catch(e) { alert('数据解析失败'); return; }
+        const printWindow = window.open('', '_blank', 'width=600,height=700');
+        if (!printWindow) { alert('请允许弹出窗口'); return; }
+        const now = new Date().toLocaleString();
+        printWindow.document.write(`
+            <!DOCTYPE html><html><head><meta charset="UTF-8"><title>账单打印 - ${bill.title}</title>
+            <style>
+                body { font-family: 'Microsoft Yahei', 'SimHei', sans-serif; padding: 30px; background: #f8f9fa; }
+                .print-card { max-width: 500px; margin: 0 auto; background: white; border-radius: 24px; padding: 30px; }
+                h2 { text-align: center; color: #e83e8c; }
+                .detail-row { display: flex; margin-bottom: 16px; border-bottom: 1px solid #eee; padding-bottom: 8px; }
+                .label { font-weight: bold; width: 100px; }
+                .amount { font-size: 22px; font-weight: bold; color: #e83e8c; }
+                .footer { margin-top: 30px; text-align: center; font-size: 12px; color: #999; }
+                @media print { body { background: white; } .no-print { display: none; } }
+            </style>
+            </head><body>
+            <div class="print-card">
+                <h2>📄 账单详情</h2>
+                <div class="detail-row"><div class="label">标题：</div><div>${bill.title}</div></div>
+                <div class="detail-row"><div class="label">时间：</div><div>${bill.billtime}</div></div>
+                <div class="detail-row"><div class="label">类型：</div><div>${bill.typeName}</div></div>
+                <div class="detail-row"><div class="label">金额：</div><div class="amount">¥ ${parseFloat(bill.price).toFixed(2)}</div></div>
+                <div class="detail-row"><div class="label">备注：</div><div>${bill.remark === '-' ? '无' : bill.remark}</div></div>
+                <div class="footer">打印时间：${now}<br>账本小屋系统 · 电子凭证</div>
+            </div>
+            <div class="no-print" style="text-align:center; margin-top:20px;"><button onclick="window.print();">🖨️ 打印/保存PDF</button></div>
+            <script>if(window.matchMedia('print').matches) window.print();<\/script>
+            </body></html>
+        `);
+        printWindow.document.close();
+    };
+
+    function printAllBillsList() {
+        const params = { page:1, limit:9999, typeid:$('#search_typeid').val(), startDate:$('#startDate').val(), endDate:$('#endDate').val() };
+        $.get('/bills/loadAllBills', params, function(res) {
+            let records = (res.code===0 || res.code===200) ? (res.data || []) : [];
+            if (!records.length) { alert('无数据可打印'); return; }
+            let rowsHtml = '';
+            let totalAmount = 0;
+            records.forEach((item, idx) => {
+                let typeName = item.typeName || (billTypes.find(t=>t.id==item.typeid)?.name) || '未知';
+                totalAmount += parseFloat(item.price || 0);
+                rowsHtml += `<tr><td>${idx+1}</td><td>${escapeHtml(item.title)}</td><td>${item.billtime}</td><td>${escapeHtml(typeName)}</td><td style="text-align:right">¥ ${parseFloat(item.price).toFixed(2)}</td><td>${item.remark ? escapeHtml(item.remark) : '-'}</td></tr>`;
+            });
+            const win = window.open('', '_blank');
+            win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>账单报表</title><style>body{font-family:'Microsoft Yahei',SimHei,sans-serif;margin:20px;} table{border-collapse:collapse;width:100%;} th,td{border:1px solid #ccc;padding:8px;text-align:center;} th{background:#fce4ec;} .total{text-align:right;margin-top:15px;} @media print{ .no-print{display:none;} }</style></head><body><h2 style="color:#e83e8c;">📋 全量账单报表</h2><p>筛选条件: 类型 ${$('#search_typeid option:selected').text()} | 日期区间 ${$('#startDate').val()||'不限'} ~ ${$('#endDate').val()||'不限'}</p><table><thead><tr><th>序号</th><th>标题</th><th>时间</th><th>类型</th><th>金额(¥)</th><th>备注</th></tr></thead><tbody>${rowsHtml}</tbody></table><div class="total">总计: ¥ ${totalAmount.toFixed(2)} (共${records.length}条)</div><div class="footer" style="margin-top:30px; text-align:center; font-size:12px; color:#888;">账本小屋系统 - 导出打印凭证</div><div class="no-print" style="text-align:center; margin-top:20px;"><button onclick="window.print();">🖨️ 打印/保存PDF</button></div><script>if(window.matchMedia('print').matches) window.print();<\/script></body></html>`);
+            win.document.close();
+        }).fail(() => alert('获取账单失败'));
+    }
+
+    function renderPagination() {
+        let html = `<span>第 ${currentPage} / ${totalPages} 页 (共 ${totalCount} 条)</span>`;
+        if (totalPages > 1) {
+            if (currentPage > 1) html += `<button onclick="goPage(${currentPage-1})">上一页</button>`;
+            if (currentPage < totalPages) html += `<button onclick="goPage(${currentPage+1})">下一页</button>`;
+        }
+        $('#pagination').html(html);
+    }
+    function goPage(page) { currentPage = page; loadBills(); }
+    function searchBills() { currentPage = 1; loadBills(); }
+    function resetSearch() { $('#search_typeid').val('0'); $('#startDate').val(''); $('#endDate').val(''); searchBills(); }
+    function openAddModal() {
+        $('#modalTitle').text('添加账单');
+        $('#editId').val('');
+        $('#title').val('');
+        $('#billtime').val('');
+        $('#price').val('');
+        $('#remark').val('');
+        if (!billTypes.length) loadBillTypes();
+        $('#billModal').css('display', 'flex');
+    }
+    window.openEditModal = function(id) {
+        $.get('/bills/loadAllBills', { page:1, limit:1000 }, function(res) {
+            let records = (res.code===0||res.code===200) ? (res.data||[]) : [];
+            const bill = records.find(b => b.id === id);
+            if (bill) {
+                $('#modalTitle').text('修改账单');
+                $('#editId').val(bill.id);
+                $('#title').val(bill.title);
+                $('#billtime').val(bill.billtime.replace(' ', 'T').slice(0,16));
+                $('#price').val(bill.price);
+                $('#remark').val(bill.remark);
+                let typeNameForCheck = bill.typeName;
+                if (!typeNameForCheck && bill.typeid) {
+                    const found = billTypes.find(t => t.id == bill.typeid);
+                    typeNameForCheck = found ? found.name : '';
+                }
+                $('input[name="typeid"]').each(function() {
+                    if ($(this).parent().text().trim() === typeNameForCheck) $(this).prop('checked', true);
+                });
+                $('#billModal').css('display', 'flex');
+            } else alert('未找到账单');
+        });
+    };
+    function submitBill() {
+        const id = $('#editId').val();
+        const selectedType = $('input[name="typeid"]:checked').val();
+        const billtime = $('#billtime').val();
+        if (!selectedType || !$('#title').val().trim() || !billtime || !$('#price').val()) { alert('请填写完整信息'); return; }
+        const data = { title:$('#title').val(), typeid:selectedType, billtime:billtime.replace('T',' ')+':00', price:$('#price').val(), remark:$('#remark').val() };
+        if (id) data.id = id;
+        $.post(id ? '/bills/updateBills' : '/bills/addBills', data, function(res) {
+            alert(res.msg);
+            if (res.code === 200 || res.code === 0) { closeModal(); loadBills(); }
+        });
+    }
+    window.deleteBill = function(id) {
+        if (confirm('确定删除？')) {
+            $.post('/bills/deleteBills', { id:id }, function(res) {
+                alert(res.msg);
+                if (res.code === 200 || res.code === 0) {
+                    if (currentPage > 1 && $('#tableBody tr').length === 1) currentPage--;
+                    loadBills();
+                }
+            });
+        }
+    };
+    function closeModal() { $('#billModal').css('display', 'none'); }
+    function escapeHtml(str) { if (!str) return ''; return String(str).replace(/[&<>]/g, m => m==='&'?'&amp;': m==='<'?'&lt;': m==='>'?'&gt;': m); }
+
+    $(document).ready(function() {
+        loadTheme();
+        initSidebarToggle();
+        initMusicModule();
+        $('.theme-btn').click(function() {
+            const theme = $(this).data('theme');
+            setTheme(theme);
+        });
+        loadUserProfile();
+        loadBillTypes();
+        loadBills();
+        $('#searchBtn').click(searchBills);
+        $('#resetBtn').click(resetSearch);
+        $('#addBtn').click(openAddModal);
+        $('#printListBtn').click(printAllBillsList);
+        $('#submitBill').click(submitBill);
+        $('#closeModalBtn').click(closeModal);
+        $('#billModal').click(function(e) { if (e.target === this) closeModal(); });
+    });
+</script>
+</body>
+</html>
