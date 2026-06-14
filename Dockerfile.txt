@@ -1,0 +1,24 @@
+# 使用 Java 8 基础镜像
+FROM openjdk:8-jdk-slim
+
+# 设置工作目录
+WORKDIR /app
+
+# 复制 Maven 配置文件
+COPY pom.xml .
+
+# 下载依赖（利用 Docker 缓存）
+RUN apt-get update && apt-get install -y maven && \
+    mvn dependency:go-offline -B
+
+# 复制源代码
+COPY src ./src
+
+# 编译打包（跳过测试）
+RUN mvn clean package -DskipTests
+
+# 暴露端口（根据你的 Spring Boot 配置，通常是 8080）
+EXPOSE 8080
+
+# 启动命令
+CMD ["java", "-jar", "target/*.jar"]
